@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { useJobs } from "@/hooks/use-jobs";
 import { Play } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +8,7 @@ import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
 import { ScrapeHistory } from "@/components/dashboard/scrape-history";
 import { statsApi } from "@/lib/api";
 import { DashboardStats } from "@/types/index";
+import { ShinyButton } from "@/components/magicui/shiny-button";
 
 export default function DashboardPage() {
   const { triggerScrape, isScrapingLoading } = useJobs();
@@ -47,10 +47,11 @@ export default function DashboardPage() {
               Monitor your scraping performance and analytics
             </p>
           </div>
-          <Button
+
+          <ShinyButton
             onClick={() => triggerScrape()}
-            disabled={isScrapingLoading}
-            className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 transition flex items-center"
+            // disabled={isScrapingLoading}
+            className="w-full sm:w-auto border border-gray-800 bg-transparent text-white hover:bg-gray-800 transition flex items-center"
           >
             {isScrapingLoading ? (
               <>
@@ -77,12 +78,12 @@ export default function DashboardPage() {
                 Scraping...
               </>
             ) : (
-              <>
+              <div className="flex items-center">
                 <Play className="mr-2 h-4 w-4" />
                 Start Scraping
-              </>
+              </div>
             )}
-          </Button>
+          </ShinyButton>
         </div>
       </div>
 

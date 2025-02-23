@@ -2,8 +2,8 @@
 
 import { JobsTable } from "@/components/dashboard/jobs-table";
 import { useJobs } from "@/hooks/use-jobs";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { ShinyButton } from "@/components/magicui/shiny-button";
 
 export default function JobsPage() {
   const { jobs = [], isLoading, triggerScrape, isScrapingLoading } = useJobs();
@@ -39,10 +39,10 @@ export default function JobsPage() {
               Jobs
             </h1>
 
-            <Button
-              className="px-5 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-md transition"
+            <ShinyButton
+              className="px-5 py-2 text-white border border-gray-800 bg-transparent hover:bg-gray-800 rounded-md transition"
               onClick={() => triggerScrape()}
-              disabled={isScrapingLoading}
+              // disabled={isScrapingLoading}
             >
               {isScrapingLoading ? (
                 <>
@@ -52,7 +52,7 @@ export default function JobsPage() {
               ) : (
                 "Trigger Scrape"
               )}
-            </Button>
+            </ShinyButton>
           </div>
 
           {/* Job Statistics Section */}

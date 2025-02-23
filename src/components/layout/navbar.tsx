@@ -31,7 +31,7 @@ export function Navbar() {
             </span>
           )}
           <Button
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 px-4"
+            className="border border-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 px-4"
             onClick={() => logout()}
           >
             Logout
