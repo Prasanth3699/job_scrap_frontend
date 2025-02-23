@@ -7,6 +7,7 @@ import {
   DashboardStats,
   ScrapingHistory,
   JobsQueryParams,
+  User,
 } from "@/types";
 
 const api = axios.create({
@@ -94,6 +95,11 @@ export const authApi = {
     } catch (error) {
       throw error;
     }
+  },
+
+  updateProfile: async (data: Partial<User>) => {
+    const response = await api.put("/auth/profile", data);
+    return response;
   },
 };
 

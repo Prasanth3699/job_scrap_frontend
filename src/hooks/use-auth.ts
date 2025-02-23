@@ -11,6 +11,7 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   isInitialized: boolean;
+  updateProfile: (data: Partial<User>) => Promise<void>;
   initialize: () => void;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   login: (email: string, password: string) => Promise<boolean>;
@@ -105,6 +106,20 @@ export const useAuth = create<AuthState>()(
           isAuthenticated: false,
         });
         window.location.href = "/login";
+      },
+
+      updateProfile: async (data) => {
+        try {
+          set({ isLoading: true });
+          const updatedUser = await authApi.updateProfile(data);
+          set({ user: updatedUser.data });
+          toast.success("Profile updated successfully!");
+        } catch (error) {
+          console.error("Profile update error:", error);
+          toast.error("Failed to update profile");
+        } finally {
+          set({ isLoading: false });
+        }
       },
     }),
     {
