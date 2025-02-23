@@ -1,8 +1,32 @@
+/* eslint-disable @typescript-eslint/no-namespace */
 "use client";
 import { cn } from "@/lib/utils";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import {
+  Canvas,
+  useFrame,
+  useThree,
+  ThreeElements,
+  extend,
+  Object3DNode,
+} from "@react-three/fiber";
 import React, { useMemo, useRef } from "react";
+import { Mesh, PlaneGeometry } from "three";
 import * as THREE from "three";
+
+extend({ Mesh, PlaneGeometry });
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      mesh: Object3DNode<THREE.Mesh, typeof THREE.Mesh>;
+      planeGeometry: Object3DNode<
+        THREE.PlaneGeometry,
+        typeof THREE.PlaneGeometry
+      >;
+      primitive: ThreeElements["primitive"];
+    }
+  }
+}
 
 export const CanvasRevealEffect = ({
   animationSpeed = 0.4,
@@ -292,7 +316,7 @@ const ShaderMaterial = ({
   }, [size.width, size.height, source]);
 
   return (
-    <mesh ref={ref as any}>
+    <mesh ref={ref}>
       <planeGeometry args={[2, 2]} />
       <primitive object={material} attach="material" />
     </mesh>
