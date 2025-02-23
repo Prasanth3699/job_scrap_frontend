@@ -5,11 +5,19 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: [
-      "upload.wikimedia.org",
-      "randomuser.me",
-      "images.unsplash.com",
-      "avatar.iran.liara.run",
+    remotePatterns: [
+      {
+        hostname: "upload.wikimedia.org",
+      },
+      {
+        hostname: "randomuser.me",
+      },
+      {
+        hostname: "images.unsplash.com",
+      },
+      {
+        hostname: "avatar.iran.liara.run",
+      },
     ], // Add external image domains here
   },
 };
