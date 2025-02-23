@@ -74,8 +74,6 @@ export function FooterFull() {
           {navigation.social.map((item) => (
             <Button
               key={item.name}
-              variant="ghost"
-              size="icon"
               className="text-gray-400 hover:text-gray-500"
               onClick={() => window.open(item.href)}
             >
