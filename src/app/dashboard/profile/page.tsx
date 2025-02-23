@@ -86,7 +86,7 @@ export default function ProfilePage() {
                   {user?.email || "user@example.com"}
                 </p>
                 <p className="text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center gap-1">
-                  <Shield className="h-4 w-4" /> {user?.role || "Standard User"}
+                  <Shield className="h-4 w-4" /> Standard User
                 </p>
               </div>
             </CardHeader>
