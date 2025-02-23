@@ -18,6 +18,18 @@ const api = axios.create({
   },
 });
 
+interface LoginResponse {
+  access_token: string;
+  token_type: string;
+}
+
+interface RegisterResponse {
+  id: number;
+  name: string;
+  email: string;
+  is_active: boolean;
+}
+
 // Request interceptor
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -32,12 +44,20 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const message = error.response?.data?.detail || "An error occurred";
-    toast.error(message);
+
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      Cookies.remove("token");
-      window.location.href = "/login";
+      // If user is already logged in and session expires -> Logout
+      const token = localStorage.getItem("token");
+      if (token) {
+        localStorage.removeItem("token");
+        Cookies.remove("token");
+        toast.error("Session expired. Please log in again.");
+        window.location.href = "/login"; // Redirect ONLY if user was already logged in
+      }
+    } else {
+      toast.error(message);
     }
+
     return Promise.reject(error);
   }
 );
@@ -50,12 +70,15 @@ export const authApi = {
       delete api.defaults.headers.common["Authorization"];
     }
   },
-  login: async (credentials: { email: string; password: string }) => {
+  login: async (credentials: {
+    email: string;
+    password: string;
+  }): Promise<LoginResponse> => {
     try {
       const response = await api.post("/auth/login", credentials);
       console.log(response);
 
-      return response;
+      return response as unknown as LoginResponse;
     } catch (error) {
       throw error;
     }
@@ -64,10 +87,10 @@ export const authApi = {
     name: string;
     email: string;
     password: string;
-  }) => {
+  }): Promise<RegisterResponse> => {
     try {
-      const response = await api.post("/auth/register", userData);
-      return response;
+      return await api.post("/auth/register", userData);
+      // return response;
     } catch (error) {
       throw error;
     }

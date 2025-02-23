@@ -5,11 +5,6 @@ import { toast } from "sonner";
 import Cookies from "js-cookie";
 import { User } from "@/types";
 
-interface AuthResponse {
-  access_token: string;
-  user: User;
-}
-
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -21,6 +16,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
+
 export const useAuth = create<AuthState>()(
   persist(
     (set) => ({
@@ -43,23 +39,12 @@ export const useAuth = create<AuthState>()(
       register: async (name, email, password) => {
         try {
           set({ isLoading: true });
+
           const response = await authApi.register({ name, email, password });
-          const data: AuthResponse = response.data;
-          if (data?.access_token) {
-            const authState = {
-              user: data.user,
-              token: data.access_token,
-              isAuthenticated: true,
-            };
-            set(authState);
-
-            // Set token in multiple places for security
-            localStorage.setItem("token", data.access_token);
-            Cookies.set("token", data.access_token, { expires: 7 });
-
-            toast.success("Account created successfully! 🎉");
-            return true;
+          if (response.id) {
+            return true; // ✅ Indicate success so the form can redirect
           }
+
           return false;
         } catch (error) {
           console.error("Registration error:", error);
@@ -73,34 +58,38 @@ export const useAuth = create<AuthState>()(
       login: async (email, password) => {
         try {
           set({ isLoading: true });
+
           const response = await authApi.login({ email, password });
 
-          const data = response.data || response;
-
-          if (data?.access_token) {
-            // Match the API response format
-            const token = data.access_token;
-
+          if (response?.access_token) {
             set({
-              token,
+              token: response.access_token,
               isAuthenticated: true,
               isInitialized: true,
             });
 
-            // Set token in multiple places
-            localStorage.setItem("token", token);
-            Cookies.set("token", token, { expires: 7 });
+            localStorage.setItem("token", response.access_token);
+            Cookies.set("token", response.access_token, { expires: 7 });
 
-            // Update API headers
-            authApi.setAuthToken(token);
+            authApi.setAuthToken(response.access_token);
 
             toast.success("Login successful! ✅");
             return true;
           }
+
           return false;
-        } catch (error) {
+        } catch (error: unknown) {
           console.error("Login error:", error);
-          toast.error("Login failed ❌");
+
+          if (
+            (error as { response?: { status: number } }).response?.status ===
+            401
+          ) {
+            toast.error("Incorrect email or password ❌");
+          } else {
+            toast.error("Something went wrong, please try again.");
+          }
+
           return false;
         } finally {
           set({ isLoading: false });

@@ -42,16 +42,22 @@ export function RegisterForm() {
     setIsLoading(true);
     try {
       const success = await registerUser(data.name, data.email, data.password);
+      console.log("Registration Success:", success);
+
       if (success) {
         toast.success("Registration Successful! 🎉"); // ✅ Show success toast
+
         reset(); // ✅ Clear form fields after success
+
         setTimeout(() => {
           router.push("/login"); // ✅ Redirect after clearing inputs
         }, 1000);
+      } else {
+        toast.error("Registration failed ❌");
       }
     } catch (error) {
       console.error("Registration Error:", error);
-      toast.error("Registration failed ❌");
+      toast.error("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
