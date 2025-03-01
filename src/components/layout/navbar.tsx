@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { Bell } from "lucide-react";
+import { ColourfulText } from "@/components/ui/colourful-text";
 
 export function Navbar() {
   const { user, logout } = useAuth();
@@ -12,7 +13,7 @@ export function Navbar() {
       {/* Left Section */}
       <div className="flex items-center gap-4">
         <h1 className="text-xl font-semibold text-gray-800 dark:text-white whitespace-nowrap">
-          Job Scraper
+          <ColourfulText text="Job Scrapper" />
         </h1>
       </div>
 

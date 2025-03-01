@@ -43,7 +43,7 @@ export const useAuth = create<AuthState>()(
 
           const response = await authApi.register({ name, email, password });
           if (response.id) {
-            return true; // ✅ Indicate success so the form can redirect
+            return true;
           }
 
           return false;

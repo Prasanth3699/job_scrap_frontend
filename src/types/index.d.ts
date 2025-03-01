@@ -7,6 +7,7 @@ export interface User {
 
 interface Job {
   id: string;
+  company_name: string;
   job_title: string;
   job_type: string;
   salary: string;
@@ -129,3 +130,37 @@ interface JobsQueryParams {
   limit?: number;
   search?: string;
 }
+
+export interface JobSourceResponse {
+  data: JobSource[]; // Update to match your API response structure
+}
+
+export interface ScrapingConfig {
+  max_jobs: number;
+  scroll_pause_time: number;
+  element_timeout: number;
+}
+
+export interface JobSource {
+  id: number;
+  name: string;
+  url: string;
+  is_active: boolean;
+  scraping_config: ScrapingConfig;
+  last_scraped_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JobSourceFormData {
+  name: string;
+  url: string;
+  is_active: boolean;
+  scraping_config: ScrapingConfig;
+}
+
+export type JobSourceUpdateData = Partial<
+  Omit<JobSourceFormData, "scraping_config">
+> & {
+  scraping_config?: Partial<ScrapingConfig>;
+};

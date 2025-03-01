@@ -8,6 +8,9 @@ import {
   ScrapingHistory,
   JobsQueryParams,
   User,
+  JobSourceFormData,
+  JobSource,
+  JobSourceUpdateData,
 } from "@/types";
 
 const api = axios.create({
@@ -77,7 +80,6 @@ export const authApi = {
   }): Promise<LoginResponse> => {
     try {
       const response = await api.post("/auth/login", credentials);
-      console.log(response);
 
       return response as unknown as LoginResponse;
     } catch (error) {
@@ -159,7 +161,6 @@ export const statsApi = {
         return response;
       }
 
-      console.log("Invalid response structure:", response);
       // Return default data if response doesn't match expected structure
       return {
         stats: {
@@ -214,7 +215,6 @@ export const statsApi = {
         return response;
       }
 
-      console.log("Invalid response structure:", response);
       return {
         recentSessions: [],
         jobsOverTime: [],
@@ -243,6 +243,61 @@ export const jobsApi = {
   triggerScrape: async () => {
     try {
       const response = await api.post("/jobs/scrape");
+      return response;
+    } catch (error) {
+      console.error("Error triggering scrape:", error);
+      throw error;
+    }
+  },
+};
+
+export const jobSourceApi = {
+  getSources: async (): Promise<JobSource[]> => {
+    try {
+      const response = await api.get("/job-sources");
+      return response; // Your interceptor already returns response.data
+    } catch (error) {
+      console.error("Error fetching job sources:", error);
+      throw error;
+    }
+  },
+
+  createSource: async (data: JobSourceFormData): Promise<JobSource> => {
+    try {
+      const response = await api.post("/job-sources", data);
+      return response;
+    } catch (error) {
+      console.error("Error creating job source:", error);
+      throw error;
+    }
+  },
+
+  updateSource: async (
+    id: number,
+    data: JobSourceUpdateData
+  ): Promise<JobSource> => {
+    try {
+      const response = await api.put(`/job-sources/${id}`, data);
+      return response;
+    } catch (error) {
+      console.error("Error updating job source:", error);
+      throw error;
+    }
+  },
+
+  deleteSource: async (id: number) => {
+    try {
+      const response = await api.delete(`/job-sources/${id}`);
+      return response;
+    } catch (error) {
+      console.error("Error deleting job source:", error);
+      throw error;
+    }
+  },
+
+  triggerScrape: async (sourceId?: number) => {
+    try {
+      const response = await api.post("/jobs/scrape", { source_id: sourceId });
       return response;
     } catch (error) {
       console.error("Error triggering scrape:", error);

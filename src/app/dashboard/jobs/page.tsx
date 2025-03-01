@@ -4,6 +4,7 @@ import { JobsTable } from "@/components/dashboard/jobs-table";
 import { useJobs } from "@/hooks/use-jobs";
 import { Loader2 } from "lucide-react";
 import { ShinyButton } from "@/components/magicui/shiny-button";
+import { Cover } from "@/components/ui/cover";
 
 export default function JobsPage() {
   const { jobs = [], isLoading, triggerScrape, isScrapingLoading } = useJobs();
@@ -36,7 +37,7 @@ export default function JobsPage() {
           {/* Header Section */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Jobs
+              <Cover>Jobs</Cover>
             </h1>
 
             <ShinyButton

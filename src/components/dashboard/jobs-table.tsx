@@ -124,6 +124,9 @@ export function JobsTable() {
           <TableHeader className="bg-gray-100 dark:bg-gray-800 border-b dark:border-gray-600">
             <TableRow>
               <TableHead className="p-3 text-left font-semibold text-gray-700 dark:text-gray-300">
+                Company Name
+              </TableHead>
+              <TableHead className="p-3 text-left font-semibold text-gray-700 dark:text-gray-300">
                 Title
               </TableHead>
               <TableHead className="p-3 text-left font-semibold text-gray-700 dark:text-gray-300">
@@ -168,6 +171,7 @@ export function JobsTable() {
                   key={job.id}
                   className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                 >
+                  <TableCell className="p-3">{job.company_name}</TableCell>
                   <TableCell className="p-3">{job.job_title}</TableCell>
                   <TableCell className="p-3">{job.job_type}</TableCell>
                   <TableCell className="p-3">{job.salary}</TableCell>

@@ -9,6 +9,7 @@ import { ScrapeHistory } from "@/components/dashboard/scrape-history";
 import { statsApi } from "@/lib/api";
 import { DashboardStats } from "@/types/index";
 import { ShinyButton } from "@/components/magicui/shiny-button";
+import { Cover } from "@/components/ui/cover";
 
 export default function DashboardPage() {
   const { triggerScrape, isScrapingLoading } = useJobs();
@@ -41,7 +42,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-              Dashboard
+              <Cover>Dashboard</Cover>
             </h2>
             <p className="text-muted-foreground mt-1">
               Monitor your scraping performance and analytics

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { Cover } from "@/components/ui/cover";
 
 import { UserCircle, Mail, Lock, Key, User, Shield } from "lucide-react";
 
@@ -68,7 +69,7 @@ export default function ProfilePage() {
         <div className="max-w-5xl mx-auto space-y-6">
           {/* Header */}
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Profile Settings
+            <Cover> Profile Settings </Cover>
           </h1>
 
           {/* User Info Section */}

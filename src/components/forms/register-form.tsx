@@ -42,7 +42,6 @@ export function RegisterForm() {
     setIsLoading(true);
     try {
       const success = await registerUser(data.name, data.email, data.password);
-      console.log("Registration Success:", success);
 
       if (success) {
         toast.success("Registration Successful! 🎉"); // ✅ Show success toast
