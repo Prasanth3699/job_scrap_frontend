@@ -11,9 +11,12 @@ import {
   JobSourceFormData,
   JobSource,
   JobSourceUpdateData,
+  ApiResponse,
+  AdminRegistrationData,
+  UserManagement,
 } from "@/types";
 
-const api = axios.create({
+export const api = axios.create({
   baseURL:
     `${process.env.NEXT_PUBLIC_API_URL}/api/v1` ||
     "http://localhost:8000/api/v1",
@@ -35,13 +38,18 @@ interface RegisterResponse {
 }
 
 // Request interceptor
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Response interceptor
 api.interceptors.response.use(
@@ -58,6 +66,9 @@ api.interceptors.response.use(
         toast.error("Session expired. Please log in again.");
         window.location.href = "/login"; // Redirect ONLY if user was already logged in
       }
+    } else if (error.response?.status === 429) {
+      // Handle rate limiting
+      toast.error("Too many requests. Please try again later.");
     } else {
       toast.error(message);
     }
@@ -77,11 +88,20 @@ export const authApi = {
   login: async (credentials: {
     email: string;
     password: string;
-  }): Promise<LoginResponse> => {
+  }): Promise<ApiResponse<{ access_token: string; user: User }>> => {
     try {
       const response = await api.post("/auth/login", credentials);
-
-      return response as unknown as LoginResponse;
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  registerAdmin: async (
+    data: AdminRegistrationData
+  ): Promise<ApiResponse<User>> => {
+    try {
+      const response = await api.post("/auth/admin/register", data);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -94,6 +114,41 @@ export const authApi = {
     try {
       return await api.post("/auth/register", userData);
       // return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getProfile: async (): Promise<ApiResponse<User>> => {
+    try {
+      const response = await api.get("/auth/me");
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getAllUsers: async (params: {
+    page: number;
+    limit: number;
+  }): Promise<ApiResponse<UserManagement>> => {
+    try {
+      const response = await api.get("/admin/users", { params });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  updateUserStatus: async (
+    userId: string,
+    isActive: boolean
+  ): Promise<ApiResponse<User>> => {
+    try {
+      const response = await api.put(`/admin/users/${userId}/status`, {
+        is_active: isActive,
+      });
+      return response;
     } catch (error) {
       throw error;
     }

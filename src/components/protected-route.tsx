@@ -3,18 +3,43 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  adminRequired?: boolean;
+}
+
+export function ProtectedRoute({
+  children,
+  adminRequired = false,
+}: ProtectedRouteProps) {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin, isInitialized, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
+    if (!isLoading && isInitialized) {
+      if (!isAuthenticated) {
+        router.push("/login");
+      } else if (adminRequired && !isAdmin) {
+        router.push("/user-dashboard");
+        toast.error("Admin access required");
+      }
     }
-  }, [isAuthenticated, router]);
+  }, [
+    isInitialized,
+    isAuthenticated,
+    isAdmin,
+    isLoading,
+    router,
+    adminRequired,
+  ]);
 
-  if (!isAuthenticated) {
+  if (isLoading || !isInitialized) {
+    return <div>Loading...</div>; // You can replace this with a proper loading component
+  }
+
+  if (!isAuthenticated || (adminRequired && !isAdmin)) {
     return null;
   }
 

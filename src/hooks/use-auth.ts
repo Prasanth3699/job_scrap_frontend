@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { authApi } from "@/lib/api";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
-import { User } from "@/types";
+import { ApiError, User } from "@/types";
 
 interface AuthState {
   user: User | null;
@@ -11,27 +11,47 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   isInitialized: boolean;
+  isAdmin: boolean;
   updateProfile: (data: Partial<User>) => Promise<void>;
-  initialize: () => void;
+  initialize: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
+  registerAdmin: (
+    name: string,
+    email: string,
+    password: string,
+    adminSecretKey: string
+  ) => Promise<boolean>;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
 export const useAuth = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isLoading: false,
       isAuthenticated: false,
       isInitialized: false,
+      isAdmin: false,
 
-      initialize: () => {
+      initialize: async () => {
         const token = localStorage.getItem("token") || Cookies.get("token");
         if (token) {
-          authApi.setAuthToken(token);
-          set({ token, isAuthenticated: true, isInitialized: true });
+          try {
+            authApi.setAuthToken(token);
+            const user = await authApi.getProfile();
+            set({
+              token,
+              user,
+              isAuthenticated: true,
+              isInitialized: true,
+              isAdmin: user.is_admin,
+            });
+          } catch (error) {
+            set({ isInitialized: true });
+            get().logout();
+          }
         } else {
           set({ isInitialized: true });
         }
@@ -40,16 +60,37 @@ export const useAuth = create<AuthState>()(
       register: async (name, email, password) => {
         try {
           set({ isLoading: true });
-
           const response = await authApi.register({ name, email, password });
           if (response.id) {
+            toast.success("Registration successful! Please login.");
             return true;
           }
-
           return false;
         } catch (error) {
-          console.error("Registration error:", error);
-          toast.error("Registration failed ❌");
+          handleAuthError(error);
+          return false;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      registerAdmin: async (name, email, password, adminSecretKey) => {
+        try {
+          set({ isLoading: true });
+          const response = await authApi.registerAdmin({
+            name,
+            email,
+            password,
+            admin_secret_key: adminSecretKey,
+          });
+
+          if (response.id) {
+            toast.success("Admin registration successful! Please login.");
+            return true;
+          }
+          return false;
+        } catch (error) {
+          handleAuthError(error);
           return false;
         } finally {
           set({ isLoading: false });
@@ -59,38 +100,30 @@ export const useAuth = create<AuthState>()(
       login: async (email, password) => {
         try {
           set({ isLoading: true });
-
           const response = await authApi.login({ email, password });
 
-          if (response?.access_token) {
+          if (response.access_token) {
+            const token = response.access_token;
+            const user = response.user;
+
             set({
-              token: response.access_token,
+              token,
+              user,
               isAuthenticated: true,
               isInitialized: true,
+              isAdmin: user.is_admin,
             });
 
-            localStorage.setItem("token", response.access_token);
-            Cookies.set("token", response.access_token, { expires: 7 });
-
-            authApi.setAuthToken(response.access_token);
+            localStorage.setItem("token", token);
+            Cookies.set("token", token, { expires: 7 });
+            authApi.setAuthToken(token);
 
             toast.success("Login successful! ✅");
             return true;
           }
-
           return false;
-        } catch (error: unknown) {
-          console.error("Login error:", error);
-
-          if (
-            (error as { response?: { status: number } }).response?.status ===
-            401
-          ) {
-            toast.error("Incorrect email or password ❌");
-          } else {
-            toast.error("Something went wrong, please try again.");
-          }
-
+        } catch (error) {
+          handleAuthError(error);
           return false;
         } finally {
           set({ isLoading: false });
@@ -103,7 +136,9 @@ export const useAuth = create<AuthState>()(
         authApi.setAuthToken(null);
         set({
           token: null,
+          user: null,
           isAuthenticated: false,
+          isAdmin: false,
         });
         window.location.href = "/login";
       },
@@ -112,11 +147,10 @@ export const useAuth = create<AuthState>()(
         try {
           set({ isLoading: true });
           const updatedUser = await authApi.updateProfile(data);
-          set({ user: updatedUser.data });
+          set({ user: updatedUser });
           toast.success("Profile updated successfully!");
         } catch (error) {
-          console.error("Profile update error:", error);
-          toast.error("Failed to update profile");
+          handleAuthError(error);
         } finally {
           set({ isLoading: false });
         }
@@ -129,3 +163,15 @@ export const useAuth = create<AuthState>()(
     }
   )
 );
+
+// Helper function to handle auth errors
+const handleAuthError = (error: unknown) => {
+  console.error("Auth error:", error);
+  if ((error as ApiError).response?.data?.detail) {
+    toast.error((error as ApiError).response!.data!.detail);
+  } else if ((error as ApiError).message) {
+    toast.error((error as ApiError).message);
+  } else {
+    toast.error("An unexpected error occurred");
+  }
+};

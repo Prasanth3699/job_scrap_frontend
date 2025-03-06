@@ -27,8 +27,8 @@ export function Navbar() {
         {/* User Info & Logout */}
         <div className="flex items-center gap-3">
           {user?.email && (
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate max-w-[150px]">
-              {user.email}
+            <span className="text-sm font-medium capitalize text-gray-700 dark:text-gray-300 truncate max-w-[150px]">
+              {user.name}
             </span>
           )}
           <Button

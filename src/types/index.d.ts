@@ -3,6 +3,32 @@ export interface User {
   name: string;
   email: string;
   accessToken?: string;
+  is_admin: boolean;
+  is_active: boolean;
+}
+
+export interface AdminUser extends User {
+  is_admin: true;
+}
+
+export interface AdminRegistrationData {
+  name: string;
+  email: string;
+  password: string;
+  admin_secret_key: string;
+}
+
+export interface AdminDashboardStats extends DashboardStats {
+  totalUsers: number;
+  activeUsers: number;
+  adminUsers: number;
+}
+
+export interface UserManagement {
+  users: User[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 interface Job {
@@ -73,6 +99,7 @@ export interface ScrapingHistoryItem {
 export interface ApiResponse<T> {
   data: T;
   message?: string;
+  success: boolean;
 }
 
 export interface EmailConfigResponse {

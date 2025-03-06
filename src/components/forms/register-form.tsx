@@ -1,3 +1,4 @@
+// components/forms/register-form.tsx
 "use client";
 
 import { useState } from "react";
@@ -8,7 +9,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/use-auth";
-import { toast } from "sonner"; // ✅ Import toast
+import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch"; // Add this if you don't have it
 
 const registerSchema = z
   .object({
@@ -16,40 +18,71 @@ const registerSchema = z
     email: z.string().email("Invalid email address"),
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string(),
+    isAdmin: z.boolean().default(false),
+    adminSecretKey: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
-  });
+  })
+  .refine(
+    (data) => {
+      if (data.isAdmin && !data.adminSecretKey) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Admin secret key is required for admin registration",
+      path: ["adminSecretKey"],
+    }
+  );
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, registerAdmin } = useAuth();
 
   const {
     register,
     handleSubmit,
-    reset, // ✅ Get reset function to clear form fields
+    reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      isAdmin: false,
+    },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      const success = await registerUser(data.name, data.email, data.password);
+      let success;
+
+      if (data.isAdmin && data.adminSecretKey) {
+        success = await registerAdmin(
+          data.name,
+          data.email,
+          data.password,
+          data.adminSecretKey
+        );
+      } else {
+        success = await registerUser(data.name, data.email, data.password);
+      }
 
       if (success) {
-        toast.success("Registration Successful! 🎉"); // ✅ Show success toast
-
-        reset(); // ✅ Clear form fields after success
-
+        toast.success(
+          `${data.isAdmin ? "Admin" : ""} Registration Successful! 🎉`
+        );
+        reset();
         setTimeout(() => {
-          router.push("/login"); // ✅ Redirect after clearing inputs
+          router.push("/login");
         }, 1000);
       } else {
         toast.error("Registration failed ❌");
@@ -117,13 +150,53 @@ export function RegisterForm() {
         )}
       </div>
 
+      {/* Admin Toggle */}
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="admin-mode"
+          checked={isAdmin}
+          onCheckedChange={(checked) => {
+            setIsAdmin(checked);
+            setValue("isAdmin", checked);
+            if (!checked) {
+              setValue("adminSecretKey", "");
+            }
+          }}
+        />
+        <label
+          htmlFor="admin-mode"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Register as Admin
+        </label>
+      </div>
+
+      {/* Admin Secret Key Input - Only shown when isAdmin is true */}
+      {isAdmin && (
+        <div className="space-y-2">
+          <Input
+            {...register("adminSecretKey")}
+            type="password"
+            placeholder="Admin Secret Key"
+            className="bg-gray-200 dark:bg-black dark:text-white dark:border-gray-700 focus:border-primary-500 focus:ring-primary-500 transition-all"
+          />
+          {errors.adminSecretKey && (
+            <p className="text-red-500 text-sm">
+              {errors.adminSecretKey.message}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Submit Button */}
       <Button
         type="submit"
         className="w-full bg-gray-800 dark:bg-black dark:text-white hover:bg-gray-700 dark:hover:bg-gray-900 transition-all"
         disabled={isLoading}
       >
-        {isLoading ? "Creating Account..." : "Create Account"}
+        {isLoading
+          ? "Creating Account..."
+          : `Create ${isAdmin ? "Admin" : ""} Account`}
       </Button>
     </form>
   );

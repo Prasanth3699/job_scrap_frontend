@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDuration(seconds?: number): string {
   const validSeconds = Number(seconds);
-  if (isNaN(validSeconds) || validSeconds <= 0) return "0s"; // Fix NaN case
+  if (isNaN(validSeconds) || validSeconds <= 0) return "0s";
 
   const hours = Math.floor(validSeconds / 3600);
   const minutes = Math.floor((validSeconds % 3600) / 60);

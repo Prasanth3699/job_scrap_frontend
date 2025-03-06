@@ -1,5 +1,6 @@
 "use client";
 
+import { JobProcessor } from "@/components/dashboard/job-processor";
 import { motion } from "framer-motion";
 
 export default function ModernLanding() {
@@ -25,6 +26,9 @@ export default function ModernLanding() {
             <div className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-lg font-semibold">
               Stay Tuned!
             </div>
+          </div>
+          <div>
+            <JobProcessor />
           </div>
         </motion.div>
       </div>

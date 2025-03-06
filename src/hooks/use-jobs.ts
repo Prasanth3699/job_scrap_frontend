@@ -1,4 +1,3 @@
-// src/hooks/use-jobs.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobsApi } from "@/lib/api";
 import { toast } from "sonner";
