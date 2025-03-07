@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobSourceApi } from "@/lib/api";
+import { jobSourceApi } from "@/lib/api/job-source-api";
 import { toast } from "sonner";
 import type {
   JobSource,

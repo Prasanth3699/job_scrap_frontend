@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { monitoring } from "@/lib/monitoring";
-import { useAuth } from "./use-auth";
+import { useAuth } from "./auth/use-auth";
 
 export function useAnalytics() {
   const { user } = useAuth();

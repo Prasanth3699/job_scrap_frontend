@@ -1,41 +1,33 @@
 import * as Sentry from "@sentry/nextjs";
 import posthog from "posthog-js";
 import { toast } from "sonner";
-
-interface ErrorEvent {
-  message: string;
-  error: Error;
-  user?: {
-    id: string;
-    email: string;
-  };
-  metadata?: Record<string, any>;
-}
-
-interface AnalyticsEvent {
-  name: string;
-  properties?: Record<string, any>;
-  user?: {
-    id: string;
-    email: string;
-  };
-}
+import { ErrorEvent, AnalyticsEvent } from "./types";
 
 export class MonitoringService {
   private static instance: MonitoringService;
 
   private constructor() {
-    // Initialize Sentry
+    this.initializeSentry();
+    this.initializePostHog();
+  }
+
+  private initializeSentry(): void {
     Sentry.init({
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
       environment: process.env.NEXT_PUBLIC_ENV,
       tracesSampleRate: 1.0,
     });
+  }
 
-    // Initialize PostHog
-    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-    });
+  private initializePostHog(): void {
+    const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
+    const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST;
+
+    if (posthogKey && posthogHost) {
+      posthog.init(posthogKey, {
+        api_host: posthogHost,
+      });
+    }
   }
 
   static getInstance(): MonitoringService {
@@ -48,7 +40,6 @@ export class MonitoringService {
   trackError({ message, error, user, metadata }: ErrorEvent): void {
     console.error(message, error);
 
-    // Send to Sentry
     Sentry.withScope((scope) => {
       if (user) {
         scope.setUser(user);
@@ -59,19 +50,16 @@ export class MonitoringService {
       Sentry.captureException(error);
     });
 
-    // Log to PostHog
     posthog.capture("error", {
       error_message: message,
       error_stack: error.stack,
       ...metadata,
     });
 
-    // Show user feedback
     toast.error(message);
   }
 
   trackEvent({ name, properties, user }: AnalyticsEvent): void {
-    // Track in PostHog
     posthog.capture(name, {
       ...properties,
       user_id: user?.id,

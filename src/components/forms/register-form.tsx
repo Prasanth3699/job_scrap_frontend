@@ -1,4 +1,3 @@
-// components/forms/register-form.tsx
 "use client";
 
 import { useState } from "react";
@@ -8,7 +7,7 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch"; // Add this if you don't have it
 

@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { authApi } from "@/lib/api";
+import { authApi } from "@/lib/api/auth-api";
 import { toast } from "sonner";
 import Cookies from "js-cookie";
 import { ApiError, User } from "@/types";
+import { security } from "@/lib/core/security/security-service";
 
 interface AuthState {
   user: User | null;
@@ -36,7 +37,11 @@ export const useAuth = create<AuthState>()(
       isAdmin: false,
 
       initialize: async () => {
-        const token = localStorage.getItem("token") || Cookies.get("token");
+        const token =
+          security.getToken() ||
+          localStorage.getItem("token") ||
+          Cookies.get("token");
+
         if (token) {
           try {
             authApi.setAuthToken(token);
@@ -49,6 +54,7 @@ export const useAuth = create<AuthState>()(
               isAdmin: user.is_admin,
             });
           } catch (error) {
+            console.error("Failed to initialize auth:", error);
             set({ isInitialized: true });
             get().logout();
           }
@@ -56,6 +62,29 @@ export const useAuth = create<AuthState>()(
           set({ isInitialized: true });
         }
       },
+
+      // initialize: async () => {
+      //   const token = localStorage.getItem("token") || Cookies.get("token");
+      //   if (token) {
+      //     try {
+      //       authApi.setAuthToken(token);
+      //       const user = await authApi.getProfile();
+      //       set({
+      //         token,
+      //         user,
+      //         isAuthenticated: true,
+      //         isInitialized: true,
+      //         isAdmin: user.is_admin,
+      //       });
+      //     } catch (error) {
+      //       console.error("Failed to initialize auth:", error);
+      //       set({ isInitialized: true });
+      //       get().logout();
+      //     }
+      //   } else {
+      //     set({ isInitialized: true });
+      //   }
+      // },
 
       register: async (name, email, password) => {
         try {
@@ -96,7 +125,6 @@ export const useAuth = create<AuthState>()(
           set({ isLoading: false });
         }
       },
-
       login: async (email, password) => {
         try {
           set({ isLoading: true });
@@ -106,6 +134,13 @@ export const useAuth = create<AuthState>()(
             const token = response.access_token;
             const user = response.user;
 
+            // Use security service to store token
+            security.setToken(token); // Changed this line
+            // Still keep in localStorage for backward compatibility
+
+            Cookies.set("token", token, { expires: 7 });
+            authApi.setAuthToken(token);
+
             set({
               token,
               user,
@@ -113,10 +148,6 @@ export const useAuth = create<AuthState>()(
               isInitialized: true,
               isAdmin: user.is_admin,
             });
-
-            localStorage.setItem("token", token);
-            Cookies.set("token", token, { expires: 7 });
-            authApi.setAuthToken(token);
 
             toast.success("Login successful! ✅");
             return true;
@@ -131,7 +162,7 @@ export const useAuth = create<AuthState>()(
       },
 
       logout: () => {
-        localStorage.removeItem("token");
+        security.clearAllTokens();
         Cookies.remove("token");
         authApi.setAuthToken(null);
         set({

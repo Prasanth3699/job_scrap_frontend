@@ -1,12 +1,12 @@
 "use client";
 
-import { useJobs } from "@/hooks/use-jobs";
+import { useJobs } from "@/hooks/jobs/use-jobs";
 import { Play } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
 import { ScrapeHistory } from "@/components/dashboard/scrape-history";
-import { statsApi } from "@/lib/api";
+import { statsApi } from "@/lib/api/stats-api";
 import { DashboardStats } from "@/types/index";
 import { ShinyButton } from "@/components/magicui/shiny-button";
 import { Cover } from "@/components/ui/cover";

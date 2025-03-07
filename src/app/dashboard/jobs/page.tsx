@@ -1,7 +1,7 @@
 "use client";
 
 import { JobsTable } from "@/components/dashboard/jobs-table";
-import { useJobs } from "@/hooks/use-jobs";
+import { useJobs } from "@/hooks/jobs/use-jobs";
 import { Loader2 } from "lucide-react";
 import { ShinyButton } from "@/components/magicui/shiny-button";
 import { Cover } from "@/components/ui/cover";

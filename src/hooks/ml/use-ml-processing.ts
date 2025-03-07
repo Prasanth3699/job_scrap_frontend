@@ -1,32 +1,41 @@
-// hooks/use-ml-processing.ts
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { mlClient } from "@/lib/ml-client";
+import { mlClient } from "@/lib/ml/client/ml-client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/auth/use-auth";
+import { security } from "@/lib/core/security/security-service";
 
 export function useMLProcessing() {
   const [processingStatus, setProcessingStatus] = useState<string>("");
+  const { isAuthenticated, token } = useAuth();
 
   const processJobsMutation = useMutation({
     mutationFn: async (jobIds: number[]) => {
-      console.log("Starting job processing mutation");
+      const token = security.getToken();
+      if (!isAuthenticated || !token) {
+        throw new Error("Authentication required");
+      }
+
       const response = await mlClient.processJobs(jobIds);
-      console.log("Mutation response:", response);
       return response;
     },
     onMutate: () => {
       setProcessingStatus("processing");
-      console.log("Processing started");
     },
     onSuccess: (data) => {
       setProcessingStatus("completed");
-      console.log("Processing completed:", data);
       toast.success("Jobs processed successfully");
+      return data;
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       setProcessingStatus("error");
-      console.error("Processing error:", error);
-      toast.error(`Failed to process jobs: ${error.message}`);
+      if (error.message === "Authentication required") {
+        toast.error("Please login to process jobs");
+      } else if (error.response?.status === 401) {
+        toast.error("Session expired. Please login again.");
+      } else {
+        toast.error(`Failed to process jobs: ${error.message}`);
+      }
     },
   });
 
@@ -34,6 +43,7 @@ export function useMLProcessing() {
     processJobs: processJobsMutation.mutateAsync,
     isProcessing: processJobsMutation.isPending,
     processingStatus,
+    isAuthenticated,
   };
 }
 

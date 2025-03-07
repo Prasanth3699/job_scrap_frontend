@@ -1,9 +1,11 @@
 "use client";
 
 import { JobProcessor } from "@/components/dashboard/job-processor";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { motion } from "framer-motion";
 
 export default function ModernLanding() {
+  const { isAuthenticated } = useAuth();
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
       <div className="container mx-auto px-6 text-center">
@@ -28,7 +30,13 @@ export default function ModernLanding() {
             </div>
           </div>
           <div>
-            <JobProcessor />
+            {isAuthenticated ? (
+              <JobProcessor />
+            ) : (
+              <div className="text-center p-6 bg-gray-800 rounded-lg">
+                <p>Please login to access job processing features</p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

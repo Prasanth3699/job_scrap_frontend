@@ -1,6 +1,6 @@
 "use client";
 
-import { useMLProcessing } from "@/hooks/use-ml-processing";
+import { useMLProcessing } from "@/hooks/ml/use-ml-processing";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Job } from "@/types";

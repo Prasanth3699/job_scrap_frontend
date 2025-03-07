@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { jobsApi } from "@/lib/api";
+import { jobsApi } from "@/lib/api/jobs-api";
 import { Job } from "@/types";
 import { Cover } from "@/components/ui/cover";
 import { JobCard } from "@/components/jobs/job-card";

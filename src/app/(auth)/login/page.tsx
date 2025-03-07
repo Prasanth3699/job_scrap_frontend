@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { useTheme } from "next-themes";
 import { LoginForm } from "@/components/forms/login-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

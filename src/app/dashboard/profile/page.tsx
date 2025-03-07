@@ -6,7 +6,7 @@ import * as z from "zod";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { toast } from "sonner";
 import { Cover } from "@/components/ui/cover";
 

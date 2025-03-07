@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useMLProcessing } from "@/hooks/use-ml-processing";
+import { useMLProcessing } from "@/hooks/ml/use-ml-processing";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { security } from "@/lib/core/security/security-service";
 
 interface ProcessedJob {
   job_id: number;
@@ -19,17 +20,26 @@ interface ProcessingResult {
 }
 
 export function JobProcessor() {
-  const { processJobs, isProcessing, processingStatus } = useMLProcessing();
+  const { processJobs, isProcessing, processingStatus, isAuthenticated } =
+    useMLProcessing();
   const [processedData, setProcessedData] = useState<ProcessingResult | null>(
     null
   );
 
-  const handleProcessJobs = async () => {
+  const handleProcessJobs = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent default behavior
+
+    const token = security.getToken();
+
+    if (!isAuthenticated || !token) {
+      toast.error("Please login to process jobs");
+      return;
+    }
     try {
-      console.log("Processing jobs..."); // Debug log
       const result = await processJobs([1, 2, 3]);
-      console.log("Process result:", result); // Debug log
-      setProcessedData(result.data);
+      if (result?.data) {
+        setProcessedData(result.data);
+      }
     } catch (error) {
       console.error("Processing failed:", error);
       toast.error("Failed to process jobs");
@@ -44,6 +54,7 @@ export function JobProcessor() {
           onClick={handleProcessJobs}
           disabled={isProcessing}
           className="bg-blue-600 hover:bg-blue-700"
+          type="button"
         >
           {isProcessing ? (
             <>

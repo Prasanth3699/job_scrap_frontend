@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { settingsApi } from "@/lib/api";
+import { settingsApi } from "@/lib/api/settings-api";
 import { toast } from "sonner";
 import type { EmailConfig, SchedulerConfig } from "@/types";
 import type { ApiError, Settings } from "@/types";

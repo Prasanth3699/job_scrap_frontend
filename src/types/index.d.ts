@@ -97,6 +97,11 @@ export interface ScrapingHistoryItem {
 }
 
 export interface ApiResponse<T> {
+  is_admin: boolean | undefined;
+  id: int;
+  access_token: string;
+  refresh_token: string;
+  user: User | null | undefined;
   data: T;
   message?: string;
   success: boolean;
