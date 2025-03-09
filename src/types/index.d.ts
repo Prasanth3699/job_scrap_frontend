@@ -31,16 +31,35 @@ export interface UserManagement {
   limit: number;
 }
 
-interface Job {
+export interface Job {
   id: string;
-  company_name: string;
   job_title: string;
+  company_name: string;
+  location: string;
   job_type: string;
   salary: string;
   experience: string;
-  location: string;
   posting_date: string;
+  description?: string;
   apply_link: string;
+}
+export interface JobFilters {
+  locations: string[];
+  jobTypes: string[];
+  experienceLevels: string[];
+  salaryRange: {
+    min: number;
+    max: number;
+  } | null;
+  searchQuery: string;
+}
+
+export interface JobsState {
+  jobs: Job[];
+  filters: JobFilters;
+  loading: boolean;
+  hasMore: boolean;
+  currentPage: number;
 }
 
 export interface ScrapingStats {
@@ -157,10 +176,15 @@ export interface ScrapingHistory {
   jobsOverTime: JobsOverTime[];
 }
 
-interface JobsQueryParams {
+export interface JobsQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+  location?: string[];
+  jobType?: string[];
+  experience?: string[];
+  salaryMin?: number;
+  salaryMax?: number;
 }
 
 export interface JobSourceResponse {

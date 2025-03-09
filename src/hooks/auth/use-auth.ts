@@ -63,29 +63,6 @@ export const useAuth = create<AuthState>()(
         }
       },
 
-      // initialize: async () => {
-      //   const token = localStorage.getItem("token") || Cookies.get("token");
-      //   if (token) {
-      //     try {
-      //       authApi.setAuthToken(token);
-      //       const user = await authApi.getProfile();
-      //       set({
-      //         token,
-      //         user,
-      //         isAuthenticated: true,
-      //         isInitialized: true,
-      //         isAdmin: user.is_admin,
-      //       });
-      //     } catch (error) {
-      //       console.error("Failed to initialize auth:", error);
-      //       set({ isInitialized: true });
-      //       get().logout();
-      //     }
-      //   } else {
-      //     set({ isInitialized: true });
-      //   }
-      // },
-
       register: async (name, email, password) => {
         try {
           set({ isLoading: true });
@@ -149,7 +126,7 @@ export const useAuth = create<AuthState>()(
               isAdmin: user.is_admin,
             });
 
-            toast.success("Login successful! ✅");
+            toast.success("Login successful!");
             return true;
           }
           return false;
