@@ -156,7 +156,25 @@ export interface DashboardStats {
   }>;
 }
 
-// Types
+export enum UserProfileStatus {
+  INCOMPLETE = "incomplete",
+  IN_PROGRESS = "in_progress",
+  COMPLETED = "completed",
+}
+
+export interface UserProfile {
+  id?: number;
+  user_id: number;
+  profile_status: UserProfileStatus;
+  current_role?: string;
+  domains?: string[];
+  professional_title?: string;
+  career_stage?: string;
+  experience_level?: string;
+  resume_file_path?: string;
+  resume_uploaded_at?: string;
+}
+
 export interface ScrapingSession {
   id: number;
   startTime: string;

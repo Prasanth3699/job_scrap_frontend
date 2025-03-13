@@ -8,8 +8,6 @@ import HowItWorks from "@/components/landingpage/HowItWorks";
 import Stats from "@/components/landingpage/Stats";
 import Navbar from "@/components/landingpage/NavBar";
 import Footer from "@/components/landingpage/Footer";
-import LoadingSpinner from "@/components/landingpage/LoadingSpinner";
-import MLAnimation from "@/components/landingpage/MLAnimation";
 import JobMatchingProcess from "@/components/landingpage/JobMatchingProcess";
 import { Toaster } from "sonner";
 
@@ -44,7 +42,11 @@ export default function Home() {
   }, []);
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   return (

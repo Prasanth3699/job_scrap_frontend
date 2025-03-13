@@ -6,9 +6,12 @@ export const api = axios.create({
   baseURL:
     `${process.env.NEXT_PUBLIC_API_URL}/api/v1` ||
     "http://localhost:8000/api/v1",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
   },
+  timeout: 10000, // 10 seconds
 });
 
 // Request interceptor
@@ -29,6 +32,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    const status = error.response?.status;
     const message = error.response?.data?.detail || "An error occurred";
 
     if (error.response?.status === 401) {

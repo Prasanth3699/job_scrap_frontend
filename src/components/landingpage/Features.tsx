@@ -130,66 +130,9 @@ export default function Features() {
             </Tilt>
           ))}
         </div>
+        {/* Gradient Border Bottom */}
+        <div className="absolute bottom-0 left-0 right-0 h-px opacity-20 bg-gradient-to-r from-transparent via-blue-500 to-purple-500"></div>
       </div>
-      {/* Gradient Border Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-px opacity-20 bg-gradient-to-r from-transparent via-blue-500 to-purple-500"></div>
-
-      <style jsx>{`
-        .custom-card {
-          background: rgba(0, 0, 0, 0.5); /* Slightly transparent black */
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          border-radius: 1rem;
-          position: relative;
-          overflow: hidden;
-          transition: all 0.3s ease;
-          backdrop-filter: blur(10px);
-        }
-
-        .custom-card::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: -75%;
-          width: 50%;
-          height: 100%;
-          background: linear-gradient(
-            to right,
-            transparent,
-            rgba(255, 255, 255, 0.05),
-            transparent
-          );
-          transform: skewX(-25deg);
-          transition: all 0.75s ease;
-        }
-
-        .custom-card:hover::before {
-          animation: shine 1.5s infinite;
-        }
-
-        @keyframes shine {
-          0% {
-            left: -75%;
-          }
-          100% {
-            left: 125%;
-          }
-        }
-
-        .icon-container {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 50%;
-          transition: all 0.3s ease;
-        }
-
-        .custom-card:hover {
-          border-color: rgba(255, 255, 255, 0.2);
-          box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-        }
-
-        .icon-container:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-      `}</style>
     </section>
   );
 }

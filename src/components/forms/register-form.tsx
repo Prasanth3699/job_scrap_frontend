@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/auth/use-auth";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch"; // Add this if you don't have it
+import { Switch } from "@/components/ui/switch";
 
 const registerSchema = z
   .object({
@@ -80,9 +80,13 @@ export function RegisterForm() {
           `${data.isAdmin ? "Admin" : ""} Registration Successful! 🎉`
         );
         reset();
-        setTimeout(() => {
-          router.push("/login");
-        }, 1000);
+
+        // Redirect to onboarding page instead of login
+        router.push("/onboarding");
+
+        // setTimeout(() => {
+        //   router.push("/login");
+        // }, 1000);
       } else {
         toast.error("Registration failed ❌");
       }

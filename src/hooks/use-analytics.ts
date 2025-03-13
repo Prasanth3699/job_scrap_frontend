@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { monitoring } from "@/lib/monitoring";
+import { monitoring } from "@/lib/core/monitoring";
 import { useAuth } from "./auth/use-auth";
 
 export function useAnalytics() {

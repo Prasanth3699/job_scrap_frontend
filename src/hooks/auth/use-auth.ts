@@ -63,13 +63,52 @@ export const useAuth = create<AuthState>()(
         }
       },
 
+      // register: async (name, email, password) => {
+      //   try {
+      //     set({ isLoading: true });
+      //     const response = await authApi.register({ name, email, password });
+      //     if (response.id) {
+      //       toast.success("Registration successful! Please login.");
+      //       return true;
+      //     }
+      //     return false;
+      //   } catch (error) {
+      //     handleAuthError(error);
+      //     return false;
+      //   } finally {
+      //     set({ isLoading: false });
+      //   }
+      // },
+
       register: async (name, email, password) => {
         try {
           set({ isLoading: true });
           const response = await authApi.register({ name, email, password });
           if (response.id) {
-            toast.success("Registration successful! Please login.");
-            return true;
+            // Automatically log in the user after registration
+            const loginResponse = await authApi.login({ email, password });
+
+            if (loginResponse.access_token) {
+              const token = loginResponse.access_token;
+              const user = loginResponse.user;
+
+              // Use security service to store token
+              security.setToken(token);
+
+              Cookies.set("token", token, { expires: 7 });
+              authApi.setAuthToken(token);
+
+              set({
+                token,
+                user,
+                isAuthenticated: true,
+                isInitialized: true,
+                isAdmin: user.is_admin,
+              });
+
+              toast.success("Registration successful!");
+              return true;
+            }
           }
           return false;
         } catch (error) {
@@ -79,7 +118,6 @@ export const useAuth = create<AuthState>()(
           set({ isLoading: false });
         }
       },
-
       registerAdmin: async (name, email, password, adminSecretKey) => {
         try {
           set({ isLoading: true });
@@ -113,7 +151,6 @@ export const useAuth = create<AuthState>()(
 
             // Use security service to store token
             security.setToken(token); // Changed this line
-            // Still keep in localStorage for backward compatibility
 
             Cookies.set("token", token, { expires: 7 });
             authApi.setAuthToken(token);

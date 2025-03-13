@@ -198,7 +198,7 @@ export default function Hero() {
   }, []);
 
   return (
-    <div className="h-[100vh] bg-black relative">
+    <div className="h-[100vh] overflow-hidden bg-black relative">
       <div ref={containerRef} className="h-full w-full relative">
         <canvas
           ref={canvasRef}
@@ -270,6 +270,7 @@ export default function Hero() {
           </div>
         </div>
       </div>
+      <div className="absolute top-0 left-0 right-0 h-px opacity-20 bg-gradient-to-r from-transparent via-blue-500 to-purple-500"></div>
     </div>
   );
 }

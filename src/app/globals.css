@@ -119,6 +119,64 @@
 }
 /* ------------------------------------------------ */
 
+/* user main page Features section */
+.custom-card {
+  background: rgba(0, 0, 0, 0.5); /* Slightly transparent black */
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.custom-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: all 0.75s ease;
+}
+
+.custom-card:hover::before {
+  animation: shine 1.5s infinite;
+}
+
+@keyframes shine {
+  0% {
+    left: -75%;
+  }
+  100% {
+    left: 125%;
+  }
+}
+
+.icon-container {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.custom-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.icon-container:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* user main page Features section end */
+
 .gradient-text {
   @apply bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent;
   background-size: 200% 200%;
@@ -177,25 +235,6 @@
   body {
     @apply bg-background text-foreground;
   }
-}
-
-/* Smooth Scrollbar with Transitions */
-.section {
-  position: relative;
-  z-index: 2;
-  background: #000000;
-}
-
-canvas {
-  position: fixed !important;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-}
-
-/* Ensure proper stacking context */
-main {
-  isolation: isolate;
 }
 
 /* Optional: Add smooth scrolling */

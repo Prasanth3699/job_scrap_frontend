@@ -16,7 +16,6 @@ export default function JobsPage() {
   const { ref, inView } = useInView();
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  // Destructure all needed state and actions from the store
   const {
     jobs,
     filters,
@@ -31,47 +30,51 @@ export default function JobsPage() {
     setHasMore,
     setCurrentPage,
     setTotalPages,
+    resetStore,
   } = useJobStore();
 
   const fetchJobs = async (page: number, isAppending = false) => {
-    if (loading || (!isAppending && !hasMore)) return;
+    if (loading || (isAppending && !hasMore)) return;
 
     try {
       setLoading(true);
 
+      // Prepare clean filters
       const cleanFilters = {
-        ...filters,
         page,
         limit: 10,
+        ...(filters.searchQuery && { search: filters.searchQuery }),
+        ...(filters.jobTypes?.length > 0 && { jobTypes: filters.jobTypes }),
+        ...(filters.experienceLevels?.length > 0 && {
+          experienceLevels: filters.experienceLevels,
+        }),
       };
 
       const response = await jobsApi.getJobs(cleanFilters);
-      const newJobs = Array.isArray(response.jobs) ? response.jobs : [];
-      const total = response.total || 0;
-      const totalPages = Math.ceil(total / 10);
-
-      setTotalPages(totalPages);
-      setHasMore(page < totalPages);
 
       if (isAppending) {
-        appendJobs(newJobs);
+        appendJobs(response.jobs);
       } else {
-        setJobs(newJobs);
+        setJobs(response.jobs);
       }
 
+      setTotalPages(Math.ceil(response.total / 10));
+      setHasMore(page < Math.ceil(response.total / 10));
       setCurrentPage(page);
 
       // Update URL
       const newParams = new URLSearchParams(searchParams.toString());
       newParams.set("page", page.toString());
+
       Object.entries(filters).forEach(([key, value]) => {
-        if (value && (!Array.isArray(value) || value.length > 0)) {
+        if (Array.isArray(value) && value.length > 0) {
           newParams.set(key, JSON.stringify(value));
-        } else {
-          newParams.delete(key);
+        } else if (typeof value === "string" && value) {
+          newParams.set(key, value);
         }
       });
-      router.push(`/jobs?${newParams}`, { scroll: false });
+
+      router.push(`/jobs?${newParams.toString()}`, { scroll: false });
     } catch (error) {
       console.error("Error fetching jobs:", error);
       setHasMore(false);
@@ -80,14 +83,12 @@ export default function JobsPage() {
     }
   };
 
-  // Handle infinite scroll
   useEffect(() => {
     if (inView && hasMore && !loading) {
       fetchJobs(currentPage + 1, true);
     }
-  }, [inView, hasMore, loading, currentPage, totalPages]);
+  }, [inView, hasMore, loading]);
 
-  // Initialize from URL params
   useEffect(() => {
     const initializeFromUrl = () => {
       const urlFilters: any = {};
@@ -106,7 +107,6 @@ export default function JobsPage() {
         setFilters(urlFilters);
       }
 
-      setCurrentPage(page);
       fetchJobs(page);
     };
 
@@ -114,21 +114,17 @@ export default function JobsPage() {
   }, []);
 
   const handleFilterChange = (newFilters: typeof filters) => {
+    resetStore();
     setFilters(newFilters);
-    setJobs([]);
-    setCurrentPage(1);
-    setHasMore(true);
     fetchJobs(1);
   };
 
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">Find Your Next Opportunity</h1>
 
-          {/* Mobile Filter Button */}
           <button
             className="md:hidden flex items-center space-x-2 px-4 py-2 bg-gray-900 rounded-lg"
             onClick={() => setIsMobileFiltersOpen(true)}
@@ -138,10 +134,8 @@ export default function JobsPage() {
           </button>
         </div>
 
-        {/* Main Content */}
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Filters Sidebar */}
-          <aside className="hidden md:block w-64 flex-shrink-0">
+          <aside className="w-full md:w-64 flex-shrink-0">
             <JobFilters
               filters={filters}
               onFilterChange={handleFilterChange}
@@ -150,7 +144,6 @@ export default function JobsPage() {
             />
           </aside>
 
-          {/* Job Listings */}
           <main className="flex-1">
             {loading && jobs.length === 0 ? (
               <div className="flex justify-center">
@@ -162,28 +155,23 @@ export default function JobsPage() {
                   No jobs found matching your criteria
                 </p>
                 <button
-                  onClick={() =>
-                    handleFilterChange({
-                      locations: [],
-                      jobTypes: [],
-                      experienceLevels: [],
-                      salaryRange: null,
-                      searchQuery: "",
-                    })
-                  }
+                  onClick={() => {
+                    resetStore();
+                    fetchJobs(1);
+                  }}
                   className="mt-4 text-blue-400 hover:text-blue-300"
                 >
                   Clear filters
                 </button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <>
                 <JobList
                   jobs={jobs}
                   onJobClick={(jobId) => router.push(`/jobs/${jobId}`)}
                 />
 
-                {hasMore && currentPage < totalPages && (
+                {hasMore && (
                   <div ref={ref} className="h-10">
                     {loading && (
                       <div className="text-center">
@@ -192,7 +180,7 @@ export default function JobsPage() {
                     )}
                   </div>
                 )}
-              </div>
+              </>
             )}
           </main>
         </div>
