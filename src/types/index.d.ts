@@ -42,6 +42,7 @@ export interface Job {
   posting_date: string;
   description?: string;
   apply_link: string;
+  tags?: string[];
 }
 export interface JobFilters {
   locations: string[];

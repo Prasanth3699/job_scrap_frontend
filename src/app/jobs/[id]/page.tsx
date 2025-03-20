@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Job } from "@/types";
-import { ArrowLeft, MapPin, Clock, Briefcase } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Briefcase, Calendar } from "lucide-react";
 import RelatedJobs from "@/components/jobs/RelatedJobs";
 import { jobsApi } from "@/lib/api/jobs-api";
 import { sanitizeHtml } from "@/lib/utils/sanitize";
@@ -51,7 +51,10 @@ export default function JobDetailsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+          <p className="text-gray-400">Loading job details...</p>
+        </div>
       </div>
     );
   }
@@ -59,17 +62,31 @@ export default function JobDetailsPage() {
   // Error state
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
-        <p className="text-xl text-red-400 mb-4">{error || "Job not found"}</p>
-        <button
-          onClick={() => router.push("/jobs")}
-          className="text-blue-400 hover:text-blue-300 transition-colors"
-        >
-          Go back to jobs
-        </button>
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
+        <div className="bg-gray-900 rounded-lg p-8 border border-gray-800 max-w-md w-full text-center">
+          <p className="text-xl text-red-400 mb-4">
+            {error || "Job not found"}
+          </p>
+          <p className="text-gray-400 mb-6">
+            The job you're looking for might have been removed or is temporarily
+            unavailable.
+          </p>
+          <button
+            onClick={() => router.push("/jobs")}
+            className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to job listings
+          </button>
+        </div>
       </div>
     );
   }
+
+  const formatDate = (dateString) => {
+    const options = { year: "numeric", month: "long", day: "numeric" };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
 
   return (
     <div className="min-h-screen bg-black text-white py-8">
@@ -77,54 +94,60 @@ export default function JobDetailsPage() {
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center text-gray-400 hover:text-white mb-6 transition-colors"
+          className="flex items-center text-gray-400 hover:text-white mb-6 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md p-1"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Back to Jobs
         </button>
 
         {/* Job Details Card */}
-        <div className="bg-gray-900 rounded-lg p-8 border border-gray-800">
+        <div className="bg-black rounded-lg p-6 md:p-8 border border-gray-800 shadow-lg">
           {/* Header */}
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white">{job.job_title}</h1>
-              <p className="text-xl text-gray-400 mt-2">{job.company_name}</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-white">
+                {job.job_title}
+              </h1>
+              <p className="text-lg md:text-xl text-gray-300 mt-2">
+                {job.company_name}
+              </p>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-semibold text-blue-400">
+            <div className="md:text-right">
+              <p className="text-lg font-semibold text-green-400">
                 {job.salary}
               </p>
-              <p className="text-gray-500 text-sm mt-1">
-                Posted {new Date(job.posting_date).toLocaleDateString()}
-              </p>
+              <div className="flex items-center text-gray-400 mt-1 md:justify-end">
+                <Calendar className="w-4 h-4 mr-1" />
+                <p className="text-sm">Posted {formatDate(job.posting_date)}</p>
+              </div>
             </div>
           </div>
 
           {/* Job Metadata */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-            <div className="flex items-center text-gray-400">
-              <MapPin className="w-5 h-5 mr-2" />
-              {job.location}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8 bg-gray-900 p-4 rounded-lg">
+            <div className="flex items-center text-gray-300">
+              <MapPin className="w-5 h-5 mr-2 text-blue-400" />
+              <span>{job.location}</span>
             </div>
-            <div className="flex items-center text-gray-400">
-              <Briefcase className="w-5 h-5 mr-2" />
-              {job.job_type}
+            <div className="flex items-center text-gray-300">
+              <Briefcase className="w-5 h-5 mr-2 text-blue-400" />
+              <span>{job.job_type}</span>
             </div>
-            <div className="flex items-center text-gray-400">
-              <Clock className="w-5 h-5 mr-2" />
-              {job.experience}
+            <div className="flex items-center text-gray-300">
+              <Clock className="w-5 h-5 mr-2 text-blue-400" />
+              <span>{job.experience}</span>
             </div>
           </div>
 
           {/* Job Description */}
           <div className="mt-8 space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-white mb-3">
+              <h2 className="text-xl font-semibold text-white mb-3 flex items-center">
                 Job Description
+                <div className="h-px flex-grow bg-gray-800 ml-4"></div>
               </h2>
               <div
-                className="prose prose-invert max-w-none text-gray-400 leading-relaxed"
+                className="prose prose-invert max-w-none text-gray-300 leading-relaxed"
                 dangerouslySetInnerHTML={{
                   __html: sanitizeHtml(
                     job.description || "No description available"
@@ -140,10 +163,13 @@ export default function JobDetailsPage() {
               href={job.apply_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             >
               Apply for this position
             </a>
+            <p className="text-gray-500 text-sm mt-2">
+              Opens application on company website
+            </p>
           </div>
         </div>
 
@@ -184,7 +210,9 @@ export default function JobDetailsPage() {
 
         {/* Related Jobs Section */}
         {relatedJobs.length > 0 && (
-          <RelatedJobs currentJobId={job.id} jobs={relatedJobs} />
+          <div className="mt-12">
+            <RelatedJobs currentJobId={job.id} jobs={relatedJobs} />
+          </div>
         )}
       </div>
     </div>
