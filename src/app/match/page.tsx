@@ -7,9 +7,14 @@ import { jobsApi } from "@/lib/api/jobs-api";
 import { FileUpload } from "@/components/ui/file-upload";
 import { ShinyButton } from "@/components/magicui/shiny-button";
 import { Job } from "@/types";
+import { mlApi } from "@/lib/ml/api/ml-api";
+
+import axios from "axios";
+import { toast } from "sonner";
 
 // PDF viewer libraries will need to be imported at component level for client-side usage
 import dynamic from "next/dynamic";
+import { useResumeAnalysis } from "@/hooks/ml/use-resume-analysis";
 
 // Dynamically import PDF viewer to avoid SSR issues
 const PDFViewer = dynamic(() => import("@/components/resume/PDFViewer"), {
@@ -158,7 +163,8 @@ export default function MatchPage() {
   const [resume, setResume] = useState<File | null>(null);
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [tempFile, setTempFile] = useState<File | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { analyzeResume, isAnalyzing } = useResumeAnalysis();
 
   // Load selected jobs and resume on component mount
   useEffect(() => {
@@ -223,18 +229,25 @@ export default function MatchPage() {
   };
 
   // Handle analyze button click
-  const handleAnalyze = () => {
-    setIsAnalyzing(true);
-    // In a real application, you would send the resume and job data to your backend
-    // for analysis and then show the results
+  const handleAnalyze = async () => {
+    // Ensure resume and jobs are selected
+    if (!resume || selectedJobs.length === 0) {
+      toast.error("Please upload a resume and select jobs");
+      return;
+    }
 
-    // Simulate analysis delay
-    setTimeout(() => {
-      router.push("/match-results?jobs=" + searchParams.get("jobs"));
-    }, 2000);
+    try {
+      // Use the hook's analyzeResume method
+      await analyzeResume({
+        resume,
+        jobIds: selectedJobs.map((job) => Number(job.id)),
+      });
+    } catch (error) {
+      // Additional error handling if needed
+      console.error("Analysis error:", error);
+    }
   };
 
-  // Determine which file viewer to use based on file type
   const renderResumeViewer = () => {
     if (!resume) return <NoResume onUploadClick={goToResumeUpload} />;
 
@@ -336,7 +349,8 @@ export default function MatchPage() {
             {resume && (
               <div className="flex justify-end mt-4">
                 <ShinyButton
-                  onClick={isAnalyzing ? undefined : handleAnalyze}
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
                   className={`px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:opacity-90 transition-all duration-200 ${
                     isAnalyzing
                       ? "opacity-70 cursor-not-allowed pointer-events-none"
@@ -352,6 +366,23 @@ export default function MatchPage() {
                     "Let's Analyze"
                   )}
                 </ShinyButton>
+                {/*  <ShinyButton
+                  onClick={isAnalyzing ? undefined : handleAnalyze}
+                  className={`px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:opacity-90 transition-all duration-200 ${
+                    isAnalyzing
+                      ? "opacity-70 cursor-not-allowed pointer-events-none"
+                      : ""
+                  }`}
+                >
+                  {isAnalyzing ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white" />
+                      <span>Analyzing...</span>
+                    </div>
+                  ) : (
+                    "Let's Analyze"
+                  )}
+                </ShinyButton> */}
               </div>
             )}
           </div>

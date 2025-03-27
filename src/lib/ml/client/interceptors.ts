@@ -1,34 +1,10 @@
+//lib/ml/api/client/interceptors.ts
 import { AxiosInstance } from "axios";
 import { security } from "@/lib/core/security/security-service";
 import { monitoring } from "@/lib/core/monitoring/monitoring-service";
 
 export const setupMLInterceptors = (api: AxiosInstance) => {
-  // api.interceptors.request.use(
-  //   (config) => {
-  //     const token = security.getToken();
-  //     if (token && security.validateToken(token)) {
-  //       config.headers.Authorization = `Bearer ${token}`;
-  //     }
-
-  //     // Add security headers
-  //     Object.assign(config.headers, security.getSecurityHeaders());
-
-  //     const endTracking = monitoring.startPerformanceTracking(
-  //       `ML_${config.method?.toUpperCase()} ${config.url}`
-  //     );
-  //     (config as any).endTracking = endTracking;
-
-  //     return config;
-  //   },
-  //   (error) => {
-  //     monitoring.trackError({
-  //       message: "ML API request error",
-  //       error,
-  //     });
-  //     return Promise.reject(error);
-  //   }
-  // );
-
+  // Request interceptor
   api.interceptors.request.use(
     (config) => {
       const token = security.getToken();
@@ -40,8 +16,14 @@ export const setupMLInterceptors = (api: AxiosInstance) => {
         return Promise.reject(new Error("Token is invalid or expired"));
       }
 
-      config.headers.Authorization = `Bearer ${token}`;
-      Object.assign(config.headers, security.getSecurityHeaders());
+      // Handle different content types
+      if (config.headers["Content-Type"] === "multipart/form-data") {
+        // For multipart/form-data, don't modify headers
+        config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        config.headers.Authorization = `Bearer ${token}`;
+        Object.assign(config.headers, security.getSecurityHeaders());
+      }
 
       const endTracking = monitoring.startPerformanceTracking(
         `ML_${config.method?.toUpperCase()} ${config.url}`
@@ -73,6 +55,7 @@ export const setupMLInterceptors = (api: AxiosInstance) => {
         },
       });
 
+      // Return the entire response for multipart/form-data
       return response.data;
     },
     (error) => {

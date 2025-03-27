@@ -36,7 +36,7 @@ export function ProtectedRoute({
   ]);
 
   if (isLoading || !isInitialized) {
-    return <div>Loading...</div>; // You can replace this with a proper loading component
+    return <div>Loading...</div>; // We need to replace replace this with a proper loading component
   }
 
   if (!isAuthenticated || (adminRequired && !isAdmin)) {
