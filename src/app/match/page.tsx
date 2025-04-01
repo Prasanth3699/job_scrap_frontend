@@ -7,14 +7,13 @@ import { jobsApi } from "@/lib/api/jobs-api";
 import { FileUpload } from "@/components/ui/file-upload";
 import { ShinyButton } from "@/components/magicui/shiny-button";
 import { Job } from "@/types";
-import { mlApi } from "@/lib/ml/api/ml-api";
 
-import axios from "axios";
+import { useResumeAnalysis } from "@/hooks/ml/use-resume-analysis";
+import { useAnalysisStore } from "@/stores/analysis-store";
 import { toast } from "sonner";
 
 // PDF viewer libraries will need to be imported at component level for client-side usage
 import dynamic from "next/dynamic";
-import { useResumeAnalysis } from "@/hooks/ml/use-resume-analysis";
 
 // Dynamically import PDF viewer to avoid SSR issues
 const PDFViewer = dynamic(() => import("@/components/resume/PDFViewer"), {
@@ -165,6 +164,7 @@ export default function MatchPage() {
   const [tempFile, setTempFile] = useState<File | null>(null);
   // const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { analyzeResume, isAnalyzing } = useResumeAnalysis();
+  const { setResults, setJobIds } = useAnalysisStore();
 
   // Load selected jobs and resume on component mount
   useEffect(() => {
@@ -230,23 +230,70 @@ export default function MatchPage() {
 
   // Handle analyze button click
   const handleAnalyze = async () => {
-    // Ensure resume and jobs are selected
     if (!resume || selectedJobs.length === 0) {
       toast.error("Please upload a resume and select jobs");
       return;
     }
 
     try {
-      // Use the hook's analyzeResume method
-      await analyzeResume({
+      const jobIdsParam = searchParams.get("jobs") || "";
+      setJobIds(jobIdsParam);
+
+      const result = await analyzeResume({
         resume,
         jobIds: selectedJobs.map((job) => Number(job.id)),
       });
+
+      if (result && Array.isArray(result) && result.length > 0) {
+        setResults(result);
+        localStorage.setItem("analysisResults", JSON.stringify(result)); // Additional backup
+        router.push("/analysis-results");
+      } else {
+        throw new Error("Received empty or invalid results");
+      }
     } catch (error) {
-      // Additional error handling if needed
       console.error("Analysis error:", error);
+      toast.error(error instanceof Error ? error.message : "Analysis failed");
     }
   };
+
+  // const handleAnalyze = async () => {
+  //   // Ensure resume and jobs are selected
+  //   if (!resume || selectedJobs.length === 0) {
+  //     toast.error("Please upload a resume and select jobs");
+  //     return;
+  //   }
+
+  //   try {
+  //     const jobIdsParam = searchParams.get("jobs") || "";
+  //     setJobIds(jobIdsParam);
+
+  //     toast.promise(
+  //       analyzeResume({
+  //         resume,
+  //         jobIds: selectedJobs.map((job) => Number(job.id)),
+  //       }),
+  //       {
+  //         loading: "Analyzing your resume...",
+  //         success: (result) => {
+  //           if (!result || !Array.isArray(result)) {
+  //             throw new Error("Invalid results format");
+  //           }
+  //           setResults(result);
+  //           router.push("/analysis-results");
+  //           return "Analysis completed!";
+  //         },
+  //         error: (error) => {
+  //           console.error("Analysis error:", error);
+  //           return error.message || "Failed to analyze resume";
+  //         },
+  //       }
+  //     );
+  //   } catch (error) {
+  //     console.error("Unexpected error:", error);
+  //     toast.error("An unexpected error occurred");
+  //   }
+  // };
 
   const renderResumeViewer = () => {
     if (!resume) return <NoResume onUploadClick={goToResumeUpload} />;

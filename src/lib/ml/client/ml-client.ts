@@ -4,6 +4,7 @@ import { setupMLInterceptors } from "./interceptors";
 import { MLResponse } from "./types";
 import { handleMLError } from "../utils/error-handlers";
 import { security } from "@/lib/core/security/security-service";
+import { AnalysisResult } from "@/stores/analysis-store";
 
 class MLApiClient {
   private static instance: MLApiClient;
@@ -49,19 +50,82 @@ class MLApiClient {
   async analyzeResume(
     resume: File,
     jobIds: number[]
-  ): Promise<MLResponse<any>> {
+  ): Promise<AnalysisResult[]> {
     try {
       const formData = new FormData();
+
+      // Add resume file
       formData.append("resume_file", resume, resume.name);
-      formData.append("job_ids", JSON.stringify(jobIds));
 
-      const response = await this.fileApi.post("/api/v1/ml/analyze", formData);
+      // Add job IDs as comma-separated string
+      formData.append("job_ids", jobIds.join(","));
 
-      return response;
+      // Add static preferences (you can modify these values as needed)
+      const preferences = {
+        preferred_job_types: ["Full Time"],
+        preferred_locations: ["Remote"],
+        salary_expectation: "$50,000",
+        target_title: "Software Engineer",
+        preferred_companies: ["Google", "Microsoft"],
+        file_format: "pdf",
+      };
+
+      // Add preferences as JSON string
+      formData.append("preferences", JSON.stringify(preferences));
+
+      const response = await this.fileApi.post(
+        "/api/matching/new-matchs",
+        formData
+      );
+
+      // Debugging: Log the raw response
+      console.log("Raw API response:", response);
+
+      const responseData = response.data || response;
+
+      if (!responseData) {
+        throw new Error("Empty response from API");
+      }
+
+      // If the response is already an array, use it directly
+      if (Array.isArray(responseData)) {
+        return responseData;
+      }
+
+      // If the response has a 'data' property that's an array
+      if (responseData.data && Array.isArray(responseData.data)) {
+        return responseData.data;
+      }
+
+      throw new Error(
+        `Unexpected API response format: ${JSON.stringify(responseData)}`
+      );
     } catch (error) {
-      return handleMLError(error, "Resume analysis failed");
+      console.error("Analysis error:", error);
+      throw new Error("Failed to process analysis results");
     }
   }
+
+  // async analyzeResume(
+  //   resume: File,
+  //   jobIds: number[]
+  // ): Promise<MLResponse<any>> {
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("resume_file", resume, resume.name);
+  //     formData.append("job_ids", JSON.stringify(jobIds));
+
+  //     // const response = await this.fileApi.post("/api/v1/ml/analyze", formData);
+  //     const response = await this.fileApi.post(
+  //       "/api/matching/new-matchs",
+  //       formData
+  //     );
+
+  //     return response;
+  //   } catch (error) {
+  //     return handleMLError(error, "Resume analysis failed");
+  //   }
+  // }
 
   async processJobs(jobIds: number[]): Promise<MLResponse<any>> {
     try {

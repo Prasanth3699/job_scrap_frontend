@@ -2,6 +2,7 @@
 import { AES, enc } from "crypto-js";
 import { jwtDecode } from "jwt-decode";
 import { SecurityConfig, TokenPayload, SecurityHeaders } from "./types";
+import { monitoring } from "../monitoring";
 
 export class SecurityService {
   private static instance: SecurityService;
@@ -112,12 +113,118 @@ export class SecurityService {
     }
   }
 
+  hasPermission(requiredRole: "admin" | "user"): boolean {
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      const payload = this.getTokenPayload(token);
+      if (!payload) return false;
+
+      // Check if user has admin privileges
+      const isAdmin = payload.is_admin === true;
+
+      // Admins have all permissions
+      if (isAdmin) return true;
+
+      // For regular users, check if the required role matches
+      return requiredRole === "user";
+    } catch {
+      return false;
+    }
+  }
+
+  sanitizeInput(input: string): string {
+    if (typeof input !== "string") {
+      return "";
+    }
+
+    // Remove potentially malicious content
+    let sanitized = input
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+      .replace(/on\w+="[^"]*"/g, "")
+      .replace(/on\w+='[^']*'/g, "")
+      .replace(/javascript:/gi, "")
+      .replace(/data:/gi, "")
+      .replace(/vbscript:/gi, "");
+
+    // Trim and limit length
+    sanitized = sanitized.trim().substring(0, 1000);
+
+    // Validate against common attack patterns
+    const attackPatterns = [
+      /SELECT.*FROM/i,
+      /INSERT INTO/i,
+      /UPDATE.*SET/i,
+      /DELETE FROM/i,
+      /DROP TABLE/i,
+      /<iframe/i,
+      /<object/i,
+      /<embed/i,
+    ];
+
+    for (const pattern of attackPatterns) {
+      if (pattern.test(sanitized)) {
+        monitoring.trackError({
+          message: "Potential attack pattern detected",
+          error: new Error("Potential attack pattern detected"),
+          metadata: { input: sanitized },
+        });
+        return "";
+      }
+    }
+
+    return sanitized;
+  }
+
+  sanitizeOutput(data: any): any {
+    if (typeof data === "string") {
+      // Basic XSS protection
+      return data.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    return data;
+  }
+
+  async validateCsrfToken(token: string): Promise<boolean> {
+    const storedToken = localStorage.getItem("csrf_token");
+    if (!storedToken) return false;
+
+    try {
+      const decrypted = this.decrypt(storedToken);
+      return decrypted === token;
+    } catch {
+      return false;
+    }
+  }
+
+  generateCsrfToken(): string {
+    const token = crypto.randomUUID();
+    localStorage.setItem("csrf_token", this.encrypt(token));
+    return token;
+  }
+
+  // Enhanced token validation
+  validateTokenStructure(token: string): boolean {
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 3) return false;
+
+      // Validate JWT structure
+      const header = JSON.parse(atob(parts[0]));
+      const payload = JSON.parse(atob(parts[1]));
+
+      return !!header.alg && !!payload.exp;
+    } catch {
+      return false;
+    }
+  }
+
   // Encryption
-  private encrypt(data: string): string {
+  public encrypt(data: string): string {
     return AES.encrypt(data, this.config.encryptionKey).toString();
   }
 
-  private decrypt(encrypted: string): string {
+  public decrypt(encrypted: string): string {
     const bytes = AES.decrypt(encrypted, this.config.encryptionKey);
     return bytes.toString(enc.Utf8);
   }

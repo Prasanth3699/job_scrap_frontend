@@ -7,6 +7,7 @@ export interface SecurityConfig {
 }
 
 export interface TokenPayload {
+  user_id: string;
   sub: string;
   exp: number;
   iat: number;
