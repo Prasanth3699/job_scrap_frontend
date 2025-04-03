@@ -5,8 +5,6 @@ import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { monitoring } from "@/lib/core/monitoring";
 import { security } from "@/lib/core/security/security-service";
-import { AnalysisResultSchema } from "@/stores/analysis-store";
-import { z } from "zod";
 
 export function useResumeAnalysis() {
   const router = useRouter();

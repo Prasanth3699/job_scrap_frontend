@@ -5,6 +5,7 @@ import type { JobFilters } from "@/types";
 import { X, Search, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const jobTypes = ["Full-time", "Part-time", "Contract", "Remote", "Internship"];
 const experienceLevels = [
@@ -33,6 +34,7 @@ export default function JobFilters({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const debouncedSearch = useDebounce(inputValue, 500);
 
   // Handle URL sync with filters
   const updateURL = (newFilters: JobFilters) => {
@@ -108,8 +110,15 @@ export default function JobFilters({
 
   // Sync filters to input value when filters change externally
   useEffect(() => {
-    setInputValue(filters.searchQuery || "");
-  }, [filters.searchQuery]);
+    if (debouncedSearch !== filters.searchQuery) {
+      const newFilters = {
+        ...filters,
+        searchQuery: debouncedSearch,
+      };
+      onFilterChange(newFilters);
+      updateURL(newFilters);
+    }
+  }, [debouncedSearch]);
 
   const handleCheckboxChange = (
     category: keyof JobFilters,

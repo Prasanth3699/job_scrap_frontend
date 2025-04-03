@@ -20,7 +20,7 @@ class MLApiClient {
     // JSON API client
     this.api = axios.create({
       baseURL,
-      timeout: 30000,
+      timeout: 90000,
       headers: {
         "Content-Type": "application/json",
       },
@@ -29,7 +29,7 @@ class MLApiClient {
     // Multipart form data client
     this.fileApi = axios.create({
       baseURL,
-      timeout: 30000,
+      timeout: 90000,
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -74,7 +74,7 @@ class MLApiClient {
       formData.append("preferences", JSON.stringify(preferences));
 
       const response = await this.fileApi.post(
-        "/api/matching/new-matchs",
+        "/matching/new-matchs",
         formData
       );
 
