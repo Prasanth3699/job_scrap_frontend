@@ -14,7 +14,7 @@ export default function Home() {
         if (isAdmin) {
           router.push("/dashboard");
         } else {
-          router.push("/user-dashboard");
+          router.push("/landing-page");
         }
       } else {
         router.push("/login");

@@ -50,7 +50,7 @@ export default function UploadResumePage() {
         router.push(`/match?jobs=${jobIds}`);
       } else {
         // Default fallback
-        router.push("/user-dashboard");
+        router.push("/landing-page");
       }
     } catch (error) {
       console.error("Error saving file:", error);

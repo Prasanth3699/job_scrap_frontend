@@ -26,15 +26,35 @@ export default {
   theme: {
     extend: {
       colors: {
-        dark: {
-          50: "#edf2f7",
-          100: "#1a1b1e",
-          200: "#141517",
-          300: "#0f1012",
-          400: "#0a0b0c",
-          500: "#050606",
-          900: "#000000",
+        light: {
+          primary: "#3b82f6", // blue-500
+          secondary: "#10b981", // emerald-500
+          accent: "#8b5cf6", // violet-500
+          background: "#f8fafc", // slate-50
+          text: "#1e293b", // slate-800
+          card: "#ffffff",
         },
+        dark: {
+          primary: "#60a5fa", // blue-400
+          secondary: "#34d399", // emerald-400
+          accent: "#a78bfa", // violet-400
+          background: "#000000", // pure black as requested
+          text: "#e2e8f0", // slate-200
+          card: "#0f172a", // slate-900
+        },
+        purple: {
+          50: "#f5f3ff",
+          100: "#ede9fe",
+          200: "#ddd6fe",
+          300: "#c4b5fd",
+          400: "#a78bfa",
+          500: "#8b5cf6",
+          600: "#7c3aed",
+          700: "#6d28d9",
+          800: "#5b21b6",
+          900: "#4c1d95",
+        },
+
         primary: {
           50: "#f0f9ff",
           100: "#4f46e5",
@@ -110,72 +130,11 @@ export default {
         input:
           "`0px 2px 3px -1px rgba(0,0,0,0.1), 0px 1px 0px 0px rgba(25,28,33,0.02), 0px 0px 0px 1px rgba(25,28,33,0.08)`",
       },
-      keyframes: {
-        "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
-        },
-        "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
-        },
 
-        "quantum-pulse": {
-          "0%, 100%": { opacity: "0.4" },
-          "50%": { opacity: "1" },
-        },
-        "quantum-float": {
-          "0%, 100%": {
-            transform: "translateY(0) rotate(0deg)",
-            opacity: "0.3",
-          },
-          "50%": {
-            transform: "translateY(-20px) rotate(180deg)",
-            opacity: "0.8",
-          },
-        },
-        "quantum-spin": {
-          "0%": { transform: "rotate(0deg)" },
-          "100%": { transform: "rotate(360deg)" },
-        },
-        "quantum-shimmer": {
-          "0%": { backgroundPosition: "200% 0" },
-          "100%": { backgroundPosition: "-200% 0" },
-        },
-        "quantum-ripple": {
-          "0%": {
-            transform: "scale(0.95)",
-            boxShadow: "0 0 0 0 rgba(99, 102, 241, 0.3)",
-          },
-          "70%": {
-            transform: "scale(1)",
-            boxShadow: "0 0 0 10px rgba(99, 102, 241, 0)",
-          },
-          "100%": {
-            transform: "scale(0.95)",
-            boxShadow: "0 0 0 0 rgba(99, 102, 241, 0)",
-          },
-        },
-        "text-gradient-animation": {
-          "0%, 100%": {
-            "background-size": "200% 200%",
-            "background-position": "left center",
-          },
-          "50%": {
-            "background-size": "200% 200%",
-            "background-position": "right center",
-          },
-        },
-      },
       animation: {
+        "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        " ": "float 6s ease-in-out infinite",
+
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "quantum-pulse":
@@ -190,6 +149,12 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
       },
     },
   },

@@ -22,7 +22,7 @@ export function ProtectedRoute({
       if (!isAuthenticated) {
         router.push("/login");
       } else if (adminRequired && !isAdmin) {
-        router.push("/user-dashboard");
+        router.push("/landing-page");
         toast.error("Admin access required");
       }
     }

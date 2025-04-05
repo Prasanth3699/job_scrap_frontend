@@ -496,3 +496,26 @@ html {
     width: 6px;
   }
 }
+
+/* --------------------new user landing page---------------- */
+
+/* Custom styles */
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 rounded-md font-medium transition-colors;
+  }
+
+  .feature-card {
+    @apply transition-all duration-300 ease-in-out;
+  }
+}
+
+/* GSAP animations */
+.process-visualization {
+  perspective: 1000px;
+}
+
+/* Counter animation */
+.counter {
+  @apply inline-block;
+}
