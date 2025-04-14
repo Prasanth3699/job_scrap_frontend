@@ -30,20 +30,15 @@ export function LoginForm() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/dashboard");
+      const { isAdmin } = useAuth.getState();
+      router.push(isAdmin ? "/dashboard" : "/landing-page");
     }
   }, [isAuthenticated, router]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const success = await login(data.email, data.password);
-      if (success) {
-        // Add a small delay before redirecting
-        setTimeout(() => {
-          router.push("/dashboard");
-          router.refresh();
-        }, 100);
-      }
+      await login(data.email, data.password);
+      // The useEffect will handle the redirect when isAuthenticated changes
     } catch (error) {
       console.error("Login error:", error);
     }

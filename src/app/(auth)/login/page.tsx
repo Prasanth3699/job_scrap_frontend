@@ -17,7 +17,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard");
+      const { isAdmin } = useAuth.getState();
+      router.replace(isAdmin ? "/dashboard" : "/landing-page");
     }
   }, [isAuthenticated, router]);
 

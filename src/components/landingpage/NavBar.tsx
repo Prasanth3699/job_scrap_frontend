@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/auth/use-auth";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -52,9 +53,12 @@ export default function Navbar() {
       .join("")
       .toUpperCase() || "";
 
+  const router = useRouter();
+  const { logout } = useAuth();
+
   const handleLogout = () => {
-    localStorage.removeItem("auth-storage");
-    window.location.href = "/login";
+    logout();
+    router.push("/login");
   };
 
   return (
