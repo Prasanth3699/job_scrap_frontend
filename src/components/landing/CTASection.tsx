@@ -4,10 +4,10 @@ import { ArrowRight } from "lucide-react";
 
 export default function CTASection() {
   return (
-    <section className="py-24 px-6 bg-gradient-to-tr from-indigo-700 via-purple-700 to-blue-700 dark:from-indigo-800 dark:via-purple-800 dark:to-blue-800 text-white overflow-hidden">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-white rounded-full filter blur-3xl opacity-20"></div>
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-purple-400 rounded-full filter blur-3xl opacity-30"></div>
+    <section className="relative py-24 px-6 bg-gradient-to-tr from-indigo-700 via-purple-700 to-blue-700 dark:from-indigo-800 dark:via-purple-800 dark:to-blue-800 text-white overflow-hidden">
+      <div className="absolute inset-0 z-0 opacity-5">
+        <div className="absolute -top-20 -right-20 w-64 h-64 bg-white rounded-full filter blur-3xl opacity-10"></div>
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-purple-400 rounded-full filter blur-3xl opacity-20"></div>
       </div>
 
       <div className="relative max-w-4xl mx-auto text-center">

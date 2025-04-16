@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import TrustIndicators from "@/components/landing/TrustIndicators";
@@ -14,20 +14,8 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 export default function LandingPage() {
-  const [darkMode, setDarkMode] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
-
-  // Dark mode toggle with localStorage persistence
-  useEffect(() => {
-    const savedMode = localStorage.getItem("darkMode");
-    if (savedMode) setDarkMode(savedMode === "true");
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("darkMode", darkMode.toString());
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
 
   // Navbar scroll effect
   useEffect(() => {
@@ -40,28 +28,20 @@ export default function LandingPage() {
         end: "+=100",
         scrub: true,
       },
-      backgroundColor: darkMode
-        ? "rgba(17, 24, 39, 0.9)"
-        : "rgba(255, 255, 255, 0.9)",
+      backgroundColor: "rgba(var(--background-rgb), 0.9)",
       paddingTop: ".75rem",
       paddingBottom: ".75rem",
       backdropFilter: "blur(12px)",
-      boxShadow: darkMode
-        ? "0 4px 6px -1px rgba(0, 0, 0, 0.4)"
-        : "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
       duration: 0.3,
     });
-  }, [darkMode]);
+  }, []);
 
   return (
-    <div
-      className={`min-h-screen transition-colors duration-300 ${
-        darkMode ? "dark bg-gray-900" : "bg-gray-50"
-      }`}
-    >
-      <div className="dark:bg-gray-900 dark:text-gray-100 min-h-screen">
-        <Navbar ref={navRef} darkMode={darkMode} setDarkMode={setDarkMode} />
-        <HeroSection ref={heroRef} darkMode={darkMode} />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      <div className="min-h-screen">
+        <Navbar ref={navRef} />
+        <HeroSection ref={heroRef} />
         <TrustIndicators />
         <FeaturesSection />
         <HowItWorks />

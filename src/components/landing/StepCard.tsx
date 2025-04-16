@@ -43,7 +43,7 @@ export default function StepCard({ step, isEven }: StepCardProps) {
           </div>
         </div>
       </div>
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
+      <div className="bg-gradient-to-b  from-gray-100 to-white dark:from-gray-950 dark:to-gray-900 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
         {step.content}
       </div>
     </div>

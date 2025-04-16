@@ -38,7 +38,7 @@ export default function TrustItem({
   };
 
   return (
-    <div className="trust-item bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center">
+    <div className="trust-item bg-gradient-to-b  from-gray-100 to-white dark:from-gray-950 dark:to-gray-900 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all border border-gray-100 dark:border-gray-700 flex flex-col items-center text-center">
       <div
         className={`w-20 h-20 rounded-full bg-gradient-to-br ${colorStyles[color].gradient} flex items-center justify-center mb-6`}
       >

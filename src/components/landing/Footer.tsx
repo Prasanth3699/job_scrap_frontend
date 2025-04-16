@@ -10,7 +10,7 @@ import {
 
 export default function Footer() {
   return (
-    <footer className="py-16 px-6 bg-gray-950 text-gray-400">
+    <footer className="py-16 px-6 bg-white dark:bg-gray-950 text-gray-600 dark:text-gray-400">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
         <div>
           <div className="flex items-center space-x-2 mb-6">
@@ -84,7 +84,7 @@ export default function Footer() {
         />
       </div>
 
-      <div className="max-w-7xl mx-auto pt-12 mt-12 border-t border-gray-800 text-sm text-center">
+      <div className="max-w-7xl mx-auto pt-12 mt-12 border-t border-gray-200 dark:border-gray-800 text-sm text-center">
         <p>© {new Date().getFullYear()} JobMatch AI. All rights reserved.</p>
       </div>
     </footer>
@@ -114,7 +114,7 @@ function FooterColumn({
           <li key={item}>
             <a
               href="#"
-              className="hover:text-white transition-colors flex items-center group text-sm"
+              className="hover:text-gray-900 dark:hover:text-white transition-colors flex items-center group text-sm"
             >
               <span
                 className={`h-px w-0 ${

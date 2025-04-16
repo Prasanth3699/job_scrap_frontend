@@ -1,13 +1,9 @@
 "use client";
 
-import { FileInput, Loader2, Sparkles, Target } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { FileInput, Loader2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import MatchJobItem from "./MatchJobItem";
-
-interface DemoCardProps {
-  darkMode: boolean;
-}
 
 const jobs = [
   "Frontend Developer",
@@ -20,14 +16,11 @@ const jobs = [
   "Data Scientist",
 ];
 
-export default function DemoCard({ darkMode }: DemoCardProps) {
-  const [isAnimating, setIsAnimating] = useState(false);
+export default function DemoCard() {
   const demoCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!demoCardRef.current) return;
-
-    setIsAnimating(true);
 
     const tl = gsap.timeline({
       repeat: -1,
@@ -48,7 +41,7 @@ export default function DemoCard({ darkMode }: DemoCardProps) {
       .to(
         demoCardRef.current,
         {
-          backgroundColor: darkMode ? "rgb(17 24 39)" : "rgb(255 255 255)",
+          backgroundColor: "var(--demo-card-bg)",
           duration: 0.3,
         },
         "<"
@@ -65,7 +58,7 @@ export default function DemoCard({ darkMode }: DemoCardProps) {
       .to(
         demoCardRef.current,
         {
-          backgroundColor: darkMode ? "rgb(31 41 55)" : "rgb(249 250 251)",
+          backgroundColor: "var(--demo-card-processing-bg)",
           duration: 0.3,
         },
         "<"
@@ -92,7 +85,7 @@ export default function DemoCard({ darkMode }: DemoCardProps) {
       .to(
         demoCardRef.current,
         {
-          backgroundColor: darkMode ? "rgb(17 24 39)" : "rgb(255 255 255)",
+          backgroundColor: "var(--demo-card-bg)",
           duration: 0.3,
         },
         "<"
@@ -113,7 +106,7 @@ export default function DemoCard({ darkMode }: DemoCardProps) {
       .to(
         demoCardRef.current,
         {
-          backgroundColor: darkMode ? "rgb(31 41 55)" : "rgb(249 250 251)",
+          backgroundColor: "var(--demo-card-processing-bg)",
           duration: 0.3,
         },
         "<"
@@ -127,9 +120,8 @@ export default function DemoCard({ darkMode }: DemoCardProps) {
 
     return () => {
       tl.kill();
-      setIsAnimating(false);
     };
-  }, [darkMode]);
+  }, []);
 
   return (
     <div
@@ -175,7 +167,7 @@ export default function DemoCard({ darkMode }: DemoCardProps) {
           </div>
 
           {/* Job Selection State */}
-          <div className="job-selection absolute inset-0 p-6 opacity-0 flex flex-col">
+          <div className="job-selection absolute inset-0 p-6 opacity-0 flex极速赛车开奖直播 flex-col">
             <h4 className="font-bold text-lg mb-4">
               Select Job Titles That Interest You
             </h4>

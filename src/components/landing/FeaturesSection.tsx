@@ -5,7 +5,7 @@ import FeatureCard from "./FeatureCard";
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="py-20 px-6 bg-white dark:bg-gray-950">
+    <section id="features" className="py-20 px-6 bg-white dark:bg-black">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16 max-w-4xl mx-auto">
           <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">

@@ -41,7 +41,7 @@ export default function FeatureCard({
   };
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800 p-8 rounded-2xl hover:shadow-lg transition-all duration-300 hover:-translate-y-1 transform border border-gray-100 dark:border-gray-800 group/item">
+    <div className="bg-gradient-to-b  from-gray-100 to-white dark:from-gray-950 dark:to-gray-900 p-8 rounded-2xl hover:shadow-lg transition-all duration-300 hover:-translate-y-1 transform border border-gray-100 dark:border-gray-800 group/item">
       <div
         className={`w-14 h-14 ${colorClasses[color].bg} rounded-lg flex items-center justify-center mb-6 group-hover/item:${colorClasses[color].hover} transition-colors`}
       >

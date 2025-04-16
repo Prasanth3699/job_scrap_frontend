@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, FileInput, Sparkles, Target } from "lucide-react";
+import { FileInput, Sparkles, Target } from "lucide-react";
 import StepCard from "./StepCard";
 
 export default function HowItWorks() {
@@ -128,10 +128,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section
-      id="how-it-works"
-      className="py-20 px-6 bg-gray-50 dark:bg-gray-900/50"
-    >
+    <section id="how-it-works" className="py-20 px-6 bg-gray-50 dark:bg-black">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16 max-w-4xl mx-auto">
           <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">

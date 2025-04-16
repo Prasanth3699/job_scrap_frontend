@@ -4,7 +4,7 @@ import TrustItem from "./TrustItem";
 
 export default function TrustIndicators() {
   return (
-    <section className="py-16 bg-gradient-to-b from-gray-100 to-white dark:from-gray-900 dark:to-gray-800">
+    <section className="py-16 bg-gradient-to-b from-gray-100 to-white dark:from-black dark:to-black">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-200 dark:to-gray-400 bg-clip-text text-transparent">

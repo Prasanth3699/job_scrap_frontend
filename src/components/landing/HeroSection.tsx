@@ -1,11 +1,28 @@
 "use client";
 
+import { useRef } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import DemoCard from "./DemoCard";
+import { forwardRef } from "react";
 
-export default function HeroSection({ darkMode }: { darkMode: boolean }) {
+const HeroSection = forwardRef<HTMLDivElement>(function HeroSection(_, ref) {
+  const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const handleBrowseJobs = () => {
+    router.push("/jobs");
+    gsap.to(containerRef.current, {
+      opacity: 0.5,
+      duration: 0.3,
+
+      onComplete: () => {
+        router.push("/jobs");
+      },
+    });
+  };
+  // Animation effects removed as per request
   return (
-    <section className="pt-40 pb-20 px-6">
+    <section ref={ref} className="pt-40 pb-20 px-6 dark:bg-black">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
         <div className="space-y-8">
           <h1 className="text-5xl md:text-6xl font-bold leading-tight bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
@@ -31,8 +48,26 @@ export default function HeroSection({ darkMode }: { darkMode: boolean }) {
               Find My Matches{" "}
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button className="px-8 py-3 rounded-full font-medium border-2 border-gray-200 dark:border-gray-700 hover:bg-gray-100/70 dark:hover:bg-gray-800/70 transition-colors focus:ring-2 focus:ring-gray-400 focus:outline-none">
-              How It Works
+            <button
+              onClick={handleBrowseJobs}
+              className="group px-8 py-4 bg-transparent border border-white/20 text-white text-lg font-semibold rounded-full hover:border-white/40 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+            >
+              <span className="flex items-center justify-center gap-2">
+                Browse Jobs
+                <svg
+                  className="w-5 h-5 transform group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </span>
             </button>
           </div>
           <div className="flex items-center space-x-2 pt-4">
@@ -67,12 +102,14 @@ export default function HeroSection({ darkMode }: { darkMode: boolean }) {
           </div>
         </div>
         <div className="relative">
-          <div className="absolute -top-8 -left-8 w-40 h-40 bg-purple-400/80 dark:bg-purple-600/50 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-          <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-blue-400/80 dark:bg-blue-600/50 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-          <div className="absolute -top-16 right-0 w-52 h-52 bg-indigo-400/80 dark:bg-indigo-600/50 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
-          <DemoCard darkMode={darkMode} />
+          <div className="absolute -top-8 -left-8 w-40 h-40 bg-purple-400/60 dark:bg-purple-600/30 rounded-full filter blur-xl opacity-50 z-[-1]"></div>
+          <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-blue-400/60 dark:bg-blue-600/30 rounded-full filter blur-xl opacity-50 z-[-1]"></div>
+          <div className="absolute -top-16 right-0 w-52 h-52 bg-indigo-400/60 dark:bg-indigo-600/30 rounded-full filter blur-xl opacity-50 z-[-1]"></div>
+          <DemoCard />
         </div>
       </div>
     </section>
   );
-}
+});
+
+export default HeroSection;
