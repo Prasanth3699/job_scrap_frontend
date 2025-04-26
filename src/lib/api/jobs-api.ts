@@ -27,6 +27,9 @@ export const jobsApi = {
 
     return await api.get("/jobs", { params: cleanParams });
   },
+  getJobsDashboard: async (params?: JobsQueryParams) => {
+    return await api.get("/jobs/dashboard", { params });
+  },
   // Get single job details
   getJobById: async (id: string) => {
     return await api.get(`/jobs/${id}`);

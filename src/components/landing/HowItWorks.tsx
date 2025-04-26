@@ -159,7 +159,15 @@ export default function HowItWorks() {
   );
 }
 
-function MatchJobItem({ job }: { job: any }) {
+interface Job {
+  title: string;
+  company: string;
+  location: string;
+  salary: string;
+  match: string;
+}
+
+function MatchJobItem({ job }: { job: Job }) {
   return (
     <div className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:shadow-sm transition-all">
       <div className="flex justify-between items-start">

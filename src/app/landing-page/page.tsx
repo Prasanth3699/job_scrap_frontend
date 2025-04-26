@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import Navbar from "@/components/landing/Navbar";
+import { useRef } from "react";
+import PublicLayout from "@/components/layout/PublicLayout";
 import HeroSection from "@/components/landing/HeroSection";
 import TrustIndicators from "@/components/landing/TrustIndicators";
 import FeaturesSection from "@/components/landing/FeaturesSection";
@@ -14,33 +14,11 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 export default function LandingPage() {
-  const navRef = useRef<HTMLElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
 
-  // Navbar scroll effect
-  useEffect(() => {
-    if (!navRef.current || !heroRef.current) return;
-
-    gsap.to(navRef.current, {
-      scrollTrigger: {
-        trigger: heroRef.current,
-        start: "top top",
-        end: "+=100",
-        scrub: true,
-      },
-      backgroundColor: "rgba(var(--background-rgb), 0.9)",
-      paddingTop: ".75rem",
-      paddingBottom: ".75rem",
-      backdropFilter: "blur(12px)",
-      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-      duration: 0.3,
-    });
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <PublicLayout>
       <div className="min-h-screen">
-        <Navbar ref={navRef} />
         <HeroSection ref={heroRef} />
         <TrustIndicators />
         <FeaturesSection />
@@ -51,7 +29,7 @@ export default function LandingPage() {
         {/* Global Styles */}
         <GlobalStyles />
       </div>
-    </div>
+    </PublicLayout>
   );
 }
 

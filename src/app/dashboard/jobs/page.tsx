@@ -1,13 +1,18 @@
 "use client";
 
 import { JobsTable } from "@/components/dashboard/jobs-table";
-import { useJobs } from "@/hooks/jobs/use-jobs";
+import { useJobsForDashboard } from "@/hooks/jobs/use-job-dashboard";
 import { Loader2 } from "lucide-react";
 import { ShinyButton } from "@/components/magicui/shiny-button";
 import { Cover } from "@/components/ui/cover";
 
 export default function JobsPage() {
-  const { jobs = [], isLoading, triggerScrape, isScrapingLoading } = useJobs();
+  const {
+    jobs = [],
+    isLoading,
+    triggerScrape,
+    isScrapingLoading,
+  } = useJobsForDashboard();
 
   // Ensure jobs is always an array
   const safeJobs = Array.isArray(jobs) ? jobs : [];

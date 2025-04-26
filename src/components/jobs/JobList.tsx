@@ -1,6 +1,5 @@
-// components/jobs/JobList.tsx
 import { Job } from "@/types";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
 
 interface JobListProps {
   jobs: Job[] | null | undefined;
@@ -15,27 +14,26 @@ export default function JobList({
   isSelectionMode = false,
   selectedJobs = [],
 }: JobListProps) {
-  // Ensure jobs is an array
   const jobsArray = Array.isArray(jobs) ? jobs : [];
 
   if (jobsArray.length === 0) {
     return (
-      <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+      <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
         <p className="text-gray-500 dark:text-gray-400">No jobs found</p>
       </div>
     );
   }
 
   return (
-    <div className="divide-y divide-gray-100 dark:divide-gray-800">
+    <div className="grid gap-4">
       {jobsArray.map((job, index) => (
         <div
           key={`${job.id}-${index}`}
           onClick={() => onJobClick(job.id)}
-          className={`relative p-6 cursor-pointer transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-900 ${
+          className={`relative p-6 cursor-pointer transition-all duration-200 rounded-xl border ${
             selectedJobs.includes(job.id)
-              ? "bg-blue-50 dark:bg-blue-900/20"
-              : "bg-white dark:bg-gray-950"
+              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+              : "border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
           }`}
         >
           {/* Selection indicator */}
@@ -59,28 +57,37 @@ export default function JobList({
                   {job.company_name}
                 </p>
               </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                 {new Date(job.posting_date).toLocaleDateString()}
               </span>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-sm">
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-xs font-medium">
                 {job.location}
               </span>
-              <span className="px-3 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full text-sm">
+              <span className="px-3 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 rounded-full text-xs font-medium">
                 {job.job_type}
               </span>
-              <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full text-sm">
+              <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 rounded-full text-xs font-medium">
                 {job.experience}
               </span>
             </div>
 
-            <div className="text-gray-700 dark:text-gray-300 font-medium">
-              <span className="text-gray-500 dark:text-gray-400 mr-2">
-                Salary:
-              </span>
-              {job.salary}
+            <div className="flex items-center justify-between">
+              <div className="text-gray-700 dark:text-gray-300 font-medium">
+                <span className="text-gray-500 dark:text-gray-400 mr-2">
+                  Salary:
+                </span>
+                {job.salary}
+              </div>
+
+              {!isSelectionMode && (
+                <div className="flex items-center text-blue-600 dark:text-blue-400 text-sm font-medium">
+                  View details
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </div>
+              )}
             </div>
           </div>
         </div>

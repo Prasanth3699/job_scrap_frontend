@@ -7,6 +7,7 @@ import { Job } from "@/types";
 import { Sparkles } from "lucide-react";
 import { useAnalysisStore } from "@/stores/analysis-store";
 import { AnalysisResultSchema } from "@/stores/analysis-schema";
+import PublicLayout from "@/components/layout/PublicLayout";
 
 interface AnalysisResult {
   job_id: string;
@@ -339,12 +340,14 @@ export default function AnalysisResultsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600 mb-4" />
-          <p className="text-neutral-400">Loading your resume matches...</p>
+      <PublicLayout>
+        <div className="min-h-screen bg-black flex items-center justify-center p-4">
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600 mb-4" />
+            <p className="text-neutral-400">Loading your resume matches...</p>
+          </div>
         </div>
-      </div>
+      </PublicLayout>
     );
   }
 
@@ -360,84 +363,86 @@ export default function AnalysisResultsPage() {
   const averageMatchQuality = getMatchQuality(averageScore);
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center mb-4">
-            <Sparkles className="w-8 h-8 text-purple-500 mr-2" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Analysis Results
-            </h1>
-          </div>
+    <PublicLayout>
+      <div className="text-white p-4 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center mb-4">
+              <Sparkles className="w-8 h-8 text-purple-500 mr-2" />
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Analysis Results
+              </h1>
+            </div>
 
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 mb-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-neutral-400">Jobs analyzed</p>
-                <h2 className="text-2xl font-bold text-white">
-                  {results.length} positions
-                </h2>
-              </div>
+            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 mb-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-neutral-400">Jobs analyzed</p>
+                  <h2 className="text-2xl font-bold text-white">
+                    {results.length} positions
+                  </h2>
+                </div>
 
-              <div>
-                <p className="text-neutral-400">Average match</p>
-                <div className="flex items-center">
-                  <ScoreBadge value={averageScore} />
-                  <span
-                    className={`ml-2 font-medium ${averageMatchQuality.color}`}
+                <div>
+                  <p className="text-neutral-400">Average match</p>
+                  <div className="flex items-center">
+                    <ScoreBadge value={averageScore} />
+                    <span
+                      className={`ml-2 font-medium ${averageMatchQuality.color}`}
+                    >
+                      {averageMatchQuality.label}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <button
+                    onClick={() => router.push("/match")}
+                    className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md transition-colors duration-200 flex items-center"
                   >
-                    {averageMatchQuality.label}
-                  </span>
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                      ></path>
+                    </svg>
+                    Back to matching
+                  </button>
                 </div>
               </div>
-
-              <div>
-                <button
-                  onClick={() => router.push("/match")}
-                  className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md transition-colors duration-200 flex items-center"
-                >
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                    ></path>
-                  </svg>
-                  Back to matching
-                </button>
-              </div>
             </div>
+
+            <p className="text-neutral-400">
+              Your resume has been analyzed against {results.length} job
+              positions. Below you&apos;ll see how well you match with each
+              opportunity.
+            </p>
           </div>
 
-          <p className="text-neutral-400">
-            Your resume has been analyzed against {results.length} job
-            positions. Below you&apos;ll see how well you match with each
-            opportunity.
-          </p>
-        </div>
+          {/* Sorting/filtering controls - can be added later */}
 
-        {/* Sorting/filtering controls - can be added later */}
+          {/* Results list */}
+          <div className="space-y-6">
+            {/* Sorting selector */}
 
-        {/* Results list */}
-        <div className="space-y-6">
-          {/* Sorting selector */}
-
-          {/* Job matches */}
-          {results
-            .sort((a, b) => b.overall_score - a.overall_score)
-            .map((result) => (
-              <JobMatchCard key={result.job_id} result={result} />
-            ))}
+            {/* Job matches */}
+            {results
+              .sort((a, b) => b.overall_score - a.overall_score)
+              .map((result) => (
+                <JobMatchCard key={result.job_id} result={result} />
+              ))}
+          </div>
         </div>
       </div>
-    </div>
+    </PublicLayout>
   );
 }

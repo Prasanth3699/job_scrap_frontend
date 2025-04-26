@@ -7,11 +7,9 @@ import JobFilters from "@/components/jobs/JobFilters";
 import JobList from "@/components/jobs/JobList";
 import { useInView } from "react-intersection-observer";
 import { jobsApi } from "@/lib/api/jobs-api";
-import { Filter } from "lucide-react";
+import { Filter, Sparkles } from "lucide-react";
 import Script from "next/script";
-
-// Import GSAP at the component level for client-side usage
-// Note: Add GSAP to your project with npm install gsap
+import PublicLayout from "@/components/layout/PublicLayout";
 
 export default function JobsPage() {
   const router = useRouter();
@@ -21,7 +19,6 @@ export default function JobsPage() {
   const [isSelectionModeActive, setIsSelectionModeActive] = useState(false);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
 
-  // Reference to the match button for GSAP animation
   const matchButtonRef = useRef(null);
   const gsapLoadedRef = useRef(false);
 
@@ -31,7 +28,6 @@ export default function JobsPage() {
     loading,
     hasMore,
     currentPage,
-    totalPages,
     setJobs,
     appendJobs,
     setFilters,
@@ -42,13 +38,13 @@ export default function JobsPage() {
     resetStore,
   } = useJobStore();
 
+  // GSAP animation effect for the match button
   useEffect(() => {
     if (
       selectedJobs.length > 0 &&
       matchButtonRef.current &&
       typeof window !== "undefined"
     ) {
-      // Import GSAP dynamically
       import("gsap").then(({ gsap }) => {
         gsapLoadedRef.current = true;
 
@@ -147,6 +143,7 @@ export default function JobsPage() {
     }
   }, [selectedJobs]);
 
+  // Fetch jobs with current filters
   const fetchJobs = async (page: number, isAppending = false) => {
     if (loading || (isAppending && !hasMore)) return;
 
@@ -162,21 +159,30 @@ export default function JobsPage() {
         ...(filters.experienceLevels?.length > 0 && {
           experienceLevels: filters.experienceLevels,
         }),
+        ...(filters.locations?.length > 0 && {
+          locations: filters.locations,
+        }),
+        ...(filters.salaryRange && {
+          salaryRange: filters.salaryRange,
+        }),
       };
 
       const response = await jobsApi.getJobs(cleanFilters);
+      // Handle both interceptor-modified response and regular response
+      const responseData = response.data || response;
+      const { jobs: responseJobs, total } = responseData;
 
       if (isAppending) {
-        appendJobs(response.jobs);
+        appendJobs(responseJobs);
       } else {
-        setJobs(response.jobs);
+        setJobs(responseJobs);
       }
 
-      setTotalPages(Math.ceil(response.total / 10));
-      setHasMore(page < Math.ceil(response.total / 10));
+      setTotalPages(Math.ceil(total / 10));
+      setHasMore(page < Math.ceil(total / 10));
       setCurrentPage(page);
 
-      // Update URL
+      // Update URL with current filters and pagination
       const newParams = new URLSearchParams(searchParams.toString());
       newParams.set("page", page.toString());
 
@@ -185,6 +191,8 @@ export default function JobsPage() {
           newParams.set(key, JSON.stringify(value));
         } else if (typeof value === "string" && value) {
           newParams.set(key, value);
+        } else if (typeof value === "number") {
+          newParams.set(key, value.toString());
         }
       });
 
@@ -197,15 +205,31 @@ export default function JobsPage() {
     }
   };
 
+  // Infinite scroll effect
   useEffect(() => {
     if (inView && hasMore && !loading) {
       fetchJobs(currentPage + 1, true);
     }
   }, [inView, hasMore, loading]);
 
+  // Initialize from URL on first load
   useEffect(() => {
     const initializeFromUrl = () => {
-      const urlFilters: any = {};
+      interface UrlFilters {
+        searchQuery?: string;
+        jobTypes?: string[];
+        experienceLevels?: string[];
+        locations?: string[];
+        salaryRange?: { min: number; max: number } | null;
+        [key: string]:
+          | string
+          | string[]
+          | { min: number; max: number }
+          | null
+          | undefined;
+      }
+
+      const urlFilters: UrlFilters = {};
       const page = parseInt(searchParams.get("page") || "1", 10);
 
       searchParams.forEach((value, key) => {
@@ -218,7 +242,13 @@ export default function JobsPage() {
       });
 
       if (Object.keys(urlFilters).length > 0) {
-        setFilters(urlFilters);
+        setFilters({
+          searchQuery: urlFilters.searchQuery || "",
+          jobTypes: urlFilters.jobTypes || [],
+          experienceLevels: urlFilters.experienceLevels || [],
+          locations: urlFilters.locations || [],
+          salaryRange: urlFilters.salaryRange || null,
+        });
       }
 
       fetchJobs(page);
@@ -227,12 +257,14 @@ export default function JobsPage() {
     initializeFromUrl();
   }, []);
 
+  // Handle filter changes
   const handleFilterChange = (newFilters: typeof filters) => {
     resetStore();
     setFilters(newFilters);
     fetchJobs(1);
   };
 
+  // Toggle job selection
   const toggleJobSelection = (jobId: string) => {
     if (!isSelectionModeActive) return;
 
@@ -250,6 +282,7 @@ export default function JobsPage() {
     });
   };
 
+  // Toggle selection mode
   const toggleSelectionMode = () => {
     setIsSelectionModeActive((prev) => !prev);
     if (isSelectionModeActive) {
@@ -257,6 +290,7 @@ export default function JobsPage() {
     }
   };
 
+  // Handle job click (either select or navigate)
   const handleJobClick = (jobId: string) => {
     if (isSelectionModeActive) {
       toggleJobSelection(jobId);
@@ -265,6 +299,7 @@ export default function JobsPage() {
     }
   };
 
+  // Handle match button click
   const handleMatchButtonClick = () => {
     if (selectedJobs.length === 0) return;
 
@@ -276,7 +311,7 @@ export default function JobsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-black dark:text-gray-100">
+    <PublicLayout>
       {/* Script tag to load GSAP from CDN */}
       <Script
         src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"
@@ -286,18 +321,19 @@ export default function JobsPage() {
         }}
       />
 
-      {/* Sticky selection button */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-4">
+      {/* Sticky selection buttons */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-3">
         {selectedJobs.length > 0 && (
           <button
             ref={matchButtonRef}
             onClick={handleMatchButtonClick}
             className="flex items-center text-sm space-x-2 py-3 px-5 
-  rounded-full shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 
-  text-white transition-all duration-300
-  transform-gpu will-change-transform"
+              rounded-full shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 
+              text-white transition-all duration-300 hover:shadow-xl
+              transform-gpu will-change-transform"
           >
-            <span>Let&apos;s Match ({selectedJobs.length})</span>
+            <Sparkles className="w-4 h-4" />
+            <span>Match Jobs ({selectedJobs.length})</span>
           </button>
         )}
 
@@ -305,13 +341,13 @@ export default function JobsPage() {
           onClick={toggleSelectionMode}
           className={`flex items-center text-sm space-x-2 py-3 px-5 rounded-full shadow-lg transition-all duration-300 ${
             isSelectionModeActive
-              ? "bg-black hover:bg-gray-900 text-white"
-              : "bg-white hover:bg-gray-100 text-gray-900 dark:bg-black dark:hover:bg-gray-900 dark:text-white"
+              ? "bg-gray-900 hover:bg-gray-800 text-white"
+              : "bg-white hover:bg-gray-100 text-gray-900 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white"
           }`}
         >
           <span>
             {isSelectionModeActive
-              ? `Select Jobs (${selectedJobs.length}/5)`
+              ? `Selecting (${selectedJobs.length}/5)`
               : "Select Jobs"}
           </span>
         </button>
@@ -319,12 +355,17 @@ export default function JobsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Find Your Next Opportunity
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Find Your Dream Job
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
+              Browse thousands of opportunities tailored for you
+            </p>
+          </div>
 
           <button
-            className="md:hidden flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm"
+            className="md:hidden flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             onClick={() => setIsMobileFiltersOpen(true)}
           >
             <Filter className="w-5 h-5" />
@@ -332,23 +373,25 @@ export default function JobsPage() {
           </button>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6">
-          <aside className="w-full md:w-64 flex-shrink-0">
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Filter sidebar */}
+          <aside className="w-full md:w-72 flex-shrink-0">
             <JobFilters
               filters={filters}
               onFilterChange={handleFilterChange}
               isMobileOpen={isMobileFiltersOpen}
-              onMobileClose={() => setIsMobileFiltersOpen(false)}
+              setIsMobileFiltersOpen={setIsMobileFiltersOpen}
             />
           </aside>
 
+          {/* Main content area */}
           <main className="flex-1">
             {loading && jobs.length === 0 ? (
-              <div className="flex justify-center">
+              <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600" />
               </div>
             ) : Array.isArray(jobs) && jobs.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+              <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
                 <p className="text-gray-500 dark:text-gray-400">
                   No jobs found matching your criteria
                 </p>
@@ -357,13 +400,24 @@ export default function JobsPage() {
                     resetStore();
                     fetchJobs(1);
                   }}
-                  className="mt-4 text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="mt-4 text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
                 >
                   Clear filters
                 </button>
               </div>
             ) : (
               <>
+                <div className="mb-4 flex justify-between items-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Showing {jobs.length} {jobs.length === 1 ? "job" : "jobs"}
+                  </p>
+                  {isSelectionModeActive && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Select up to 5 jobs to compare
+                    </p>
+                  )}
+                </div>
+
                 <JobList
                   jobs={jobs}
                   onJobClick={handleJobClick}
@@ -385,6 +439,6 @@ export default function JobsPage() {
           </main>
         </div>
       </div>
-    </div>
+    </PublicLayout>
   );
 }

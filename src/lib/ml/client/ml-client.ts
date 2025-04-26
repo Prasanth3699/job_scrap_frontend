@@ -64,7 +64,7 @@ class MLApiClient {
       const preferences = {
         preferred_job_types: ["Full Time"],
         preferred_locations: ["Remote"],
-        salary_expectation: "$50,000",
+        salary_expectation: "500000 LPA",
         target_title: "Software Engineer",
         preferred_companies: ["Google", "Microsoft"],
         file_format: "pdf",

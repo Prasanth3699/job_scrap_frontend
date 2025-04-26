@@ -2,14 +2,32 @@
 
 import { Sparkles } from "lucide-react";
 import { animateNavLink } from "./utils";
-
-import { forwardRef } from "react";
+import { useEffect, useState, forwardRef } from "react";
 
 const Navbar = forwardRef<HTMLElement>(function Navbar(_, ref) {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <nav
       ref={ref}
-      className="fixed w-full z-50 bg-white/90 dark:bg-black/90 shadow-sm px-6 py-6 transition-colors duration-300 backdrop-blur-md"
+      className={`fixed w-full z-50 ${
+        isScrolled
+          ? "bg-white/50 dark:bg-black/50 shadow-sm px-6 py-2"
+          : "bg-white/90 dark:bg-black/90 px-6 py-6"
+      } transition-all duration-300 ease-in-out backdrop-blur-md`}
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-2">
