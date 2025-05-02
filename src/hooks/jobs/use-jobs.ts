@@ -1,21 +1,60 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsApi } from "@/lib/api/jobs-api";
+import { jobsApi, JobsQueryParams } from "@/lib/api/jobs-api";
 import { toast } from "sonner";
-import type { JobFilters } from "@/types";
+interface JobFilters {
+  page?: number;
+  limit?: number;
+  searchQuery?: string;
+  locations?: string[];
+  jobTypes?: string[];
+  experienceLevels?: string[];
+  salaryRange?: {
+    min: number;
+    max: number;
+  } | null;
+}
+
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  salary?: string;
+  description: string;
+  postedAt: string;
+  url: string;
+}
+
+interface JobsResponse {
+  jobs: Job[];
+  total: number;
+  hasMore: boolean;
+}
+
+// Convert FE filters to BE parameter keys
+function mapToQueryParams(filters?: JobFilters): JobsQueryParams {
+  return {
+    page: filters?.page ?? 1,
+    limit: filters?.limit ?? 10,
+    search: filters?.searchQuery,
+    locations: filters?.locations,
+    jobTypes: filters?.jobTypes,
+    experienceLevels: filters?.experienceLevels,
+    salaryRange: filters?.salaryRange || null,
+  };
+}
 
 export function useJobs(filters?: JobFilters) {
   const queryClient = useQueryClient();
 
-  // Regular query for jobs list
-  const { data: jobs, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["jobs", filters],
-    queryFn: async () => {
-      const response = await jobsApi.getJobs(filters);
-      return response.jobs || [];
+    queryFn: async (): Promise<JobsResponse> => {
+      const response = await jobsApi.getJobs(mapToQueryParams(filters));
+      return response.data;
     },
   });
 
-  // Mutation for triggering job scraping
   const triggerScrapeMutation = useMutation({
     mutationFn: jobsApi.triggerScrape,
     onSuccess: () => {
@@ -28,8 +67,11 @@ export function useJobs(filters?: JobFilters) {
   });
 
   return {
-    jobs,
+    jobs: data?.jobs ?? [],
+    total: data?.total ?? 0,
+    hasMore: data?.hasMore ?? false,
     isLoading,
+    error,
     triggerScrape: triggerScrapeMutation.mutate,
     isScrapingLoading: triggerScrapeMutation.isPending,
   };
@@ -39,7 +81,7 @@ export function useJobs(filters?: JobFilters) {
 export function useJobDetails(jobId: string) {
   return useQuery({
     queryKey: ["job", jobId],
-    queryFn: () => jobsApi.getJobById(jobId),
+    queryFn: () => jobsApi.getJobById(jobId), // No .data needed
     enabled: !!jobId,
   });
 }
@@ -52,119 +94,3 @@ export function useRelatedJobs(jobId: string) {
     enabled: !!jobId,
   });
 }
-// wroking code ---------------------------------------------------------
-// import {
-//   useQuery,
-//   useMutation,
-//   useQueryClient,
-//   useInfiniteQuery,
-// } from "@tanstack/react-query";
-// import { jobsApi } from "@/lib/api/jobs-api";
-// import { toast } from "sonner";
-// import { JobFilters } from "@/types";
-
-// export function useJobs(filters?: JobFilters) {
-//   const queryClient = useQueryClient();
-
-//   // Infinite query for paginated jobs
-//   const {
-//     data,
-//     fetchNextPage,
-//     hasNextPage,
-//     isFetchingNextPage,
-//     isLoading,
-//     isError,
-//     error,
-//   } = useInfiniteQuery({
-//     queryKey: ["jobs", filters],
-//     queryFn: async ({ pageParam = 1 }) => {
-//       const response = await jobsApi.getJobs({
-//         page: pageParam,
-//         limit: 10,
-//         ...filters,
-//       });
-//       return response.data;
-//     },
-//     getNextPageParam: (lastPage, pages) => {
-//       return lastPage.hasMore ? pages.length + 1 : undefined;
-//     },
-//     initialPageParam: 1,
-//   });
-
-//   // Mutation for triggering job scraping
-//   const triggerScrapeMutation = useMutation({
-//     mutationFn: jobsApi.triggerScrape,
-//     onSuccess: () => {
-//       toast.success("Scraping started successfully");
-//       queryClient.invalidateQueries({ queryKey: ["jobs"] });
-//     },
-//     onError: () => {
-//       toast.error("Failed to start scraping");
-//     },
-//   });
-
-//   // Get single job details
-//   const useJobDetails = (jobId: string) => {
-//     return useQuery({
-//       queryKey: ["job", jobId],
-//       queryFn: () => jobsApi.getJobById(jobId),
-//       enabled: !!jobId,
-//     });
-//   };
-
-//   // Get related jobs
-//   const useRelatedJobs = (jobId: string) => {
-//     return useQuery({
-//       queryKey: ["relatedJobs", jobId],
-//       queryFn: () => jobsApi.getRelatedJobs(jobId),
-//       enabled: !!jobId,
-//     });
-//   };
-
-//   return {
-//     jobs: data?.pages.flatMap((page) => page.jobs) ?? [],
-//     totalJobs: data?.pages[0]?.total ?? 0,
-//     isLoading,
-//     isError,
-//     error,
-//     fetchNextPage,
-//     hasNextPage,
-//     isFetchingNextPage,
-//     triggerScrape: triggerScrapeMutation.mutate,
-//     isScrapingLoading: triggerScrapeMutation.isPending,
-//     useJobDetails,
-//     useRelatedJobs,
-//   };
-// }
-// ---------------------------------------------------------
-// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-// import { jobsApi } from "@/lib/api/jobs-api";
-// import { toast } from "sonner";
-
-// export function useJobs() {
-//   const queryClient = useQueryClient();
-
-//   const { data: jobs, isLoading } = useQuery({
-//     queryKey: ["jobs"],
-//     queryFn: () => jobsApi.getJobs(),
-//   });
-
-//   const triggerScrapeMutation = useMutation({
-//     mutationFn: jobsApi.triggerScrape,
-
-//     onSuccess: () => {
-//       toast.success("Scraping started successfully");
-//       queryClient.invalidateQueries({ queryKey: ["jobs"] });
-//     },
-//     onError: () => {
-//       toast.error("Failed to start scraping");
-//     },
-//   });
-
-//   return {
-//     jobs, // Return the entire jobs array
-//     isLoading,
-//     triggerScrape: triggerScrapeMutation.mutate,
-//     isScrapingLoading: triggerScrapeMutation.isPending,
-//   };
-// }

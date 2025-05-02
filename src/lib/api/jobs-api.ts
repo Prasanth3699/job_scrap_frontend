@@ -5,48 +5,50 @@ export interface JobsQueryParams {
   page?: number;
   limit?: number;
   search?: string;
-  location?: string[];
-  jobType?: string[];
-  experience?: string[];
+  locations?: string[];
+  jobTypes?: string[];
+  experienceLevels?: string[];
   salaryRange?: {
     min: number;
     max: number;
+  } | null;
+}
+
+// Maps FE params to BE params
+function mapJobParams(params?: JobsQueryParams) {
+  return {
+    limit: params?.limit ?? 10,
+    page: params?.page ?? 1,
+    ...(params?.search && { search: params.search }),
+    ...(params?.locations?.length && { location: params.locations }),
+    ...(params?.jobTypes?.length && { job_type: params.jobTypes }),
+    ...(params?.experienceLevels?.length && {
+      experience: params.experienceLevels,
+    }),
+    ...(params?.salaryRange &&
+      params.salaryRange.min != null && { salary_min: params.salaryRange.min }),
+    ...(params?.salaryRange &&
+      params.salaryRange.max != null && { salary_max: params.salaryRange.max }),
   };
 }
+
 export const jobsApi = {
   getJobs: async (params?: JobsQueryParams) => {
-    const cleanParams = {
-      limit: 10, // Set default limit
-      ...params,
-      // Clean up empty arrays and null values
-      ...(params?.location?.length ? { location: params.location } : {}),
-      ...(params?.jobType?.length ? { jobType: params.jobType } : {}),
-      ...(params?.experience?.length ? { experience: params.experience } : {}),
-      ...(params?.search ? { search: params.search } : {}),
-    };
-
+    const cleanParams = mapJobParams(params);
     return await api.get("/jobs", { params: cleanParams });
   },
   getJobsDashboard: async (params?: JobsQueryParams) => {
-    return await api.get("/jobs/dashboard", { params });
+    return await api.get("/jobs/dashboard", { params: mapJobParams(params) });
   },
-  // Get single job details
   getJobById: async (id: string) => {
     return await api.get(`/jobs/${id}`);
   },
-
   getRelatedJobs: async (jobId: string) => {
     return await api.get(`/jobs/${jobId}/related`);
   },
-
-  // Get recent jobs
   getRecentJobs: async (days: number = 7) => {
-    return await api.get<Job[]>("/jobs/recent", {
-      params: { days },
-    });
+    return await api.get<Job[]>("/jobs/recent", { params: { days } });
   },
-
-  // Trigger job scraping
   triggerScrape: async () => {
     return await api.post("/jobs/scrape");
   },

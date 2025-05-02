@@ -1,448 +1,786 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+
+// --- Library Imports ---
 import { toast } from "sonner";
-import { Job } from "@/types";
-import { Sparkles } from "lucide-react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import {
+  Sparkles,
+  MapPin,
+  Clock,
+  Building,
+  BarChart,
+  Info,
+  CheckCircle,
+  XCircle,
+  ExternalLink,
+  ArrowLeft,
+  Code,
+  FileText,
+  Target,
+  TrendingUp,
+  Filter,
+  ChevronDown,
+  Loader2,
+} from "lucide-react";
+
+// --- Local Imports ---
 import { useAnalysisStore } from "@/stores/analysis-store";
-import { AnalysisResultSchema } from "@/stores/analysis-schema";
+// Use the correct schema and types from the updated schema file
+import { MatchResponseSchema, JobMatchResult } from "@/stores/analysis-schema";
 import PublicLayout from "@/components/layout/PublicLayout";
 
-interface AnalysisResult {
-  job_id: string;
-  overall_score: number;
-  score_breakdown: {
-    skills: number;
-    experience: number;
-    salary: number;
-    title: number;
-    location: number;
-    job_type: number;
-    company: number;
-  };
-  missing_skills: string[];
-  matching_skills: string[];
-  explanation: string;
-  job_details: Job;
-}
+// --- Constants & Helpers ---
+const ACCENT_GRADIENT = "from-brand-accent-from to-brand-accent-to";
+const ACCENT_TEXT_GRADIENT = `bg-gradient-to-r ${ACCENT_GRADIENT} bg-clip-text text-transparent`;
 
-const ScoreMeter = ({ value }: { value: number }) => {
-  const percentage = Math.round(value * 100);
-
-  const getColorClass = (val: number) => {
-    if (val >= 0.8) return "bg-green-500";
-    if (val >= 0.6) return "bg-blue-500";
-    if (val >= 0.4) return "bg-yellow-500";
-    return "bg-red-500";
-  };
-
-  return (
-    <div className="w-full bg-neutral-800 rounded-full h-2.5">
-      <div
-        className={`h-2.5 rounded-full ${getColorClass(value)}`}
-        style={{ width: `${percentage}%` }}
-      ></div>
-    </div>
-  );
+const STATUS_COLORS = {
+  SUCCESS: {
+    text: "text-emerald-400",
+    border: "border-emerald-500/40",
+    bg: "bg-emerald-950/60",
+    icon: CheckCircle,
+    iconColor: "text-emerald-400",
+    baseGradientFrom: "from-emerald-500",
+    baseGradientTo: "to-emerald-600",
+    darkerBg: "bg-emerald-600/10",
+    shadow: "shadow-emerald-500/30",
+    hoverShadow: "hover:shadow-emerald-500/40",
+    focusRing: "focus:ring-emerald-500",
+  },
+  INFO: {
+    text: "text-sky-400",
+    border: "border-sky-500/40",
+    bg: "bg-sky-950/60",
+    icon: CheckCircle,
+    iconColor: "text-sky-400",
+    baseGradientFrom: "from-sky-500",
+    baseGradientTo: "to-sky-600",
+    darkerBg: "bg-sky-600/10",
+    shadow: "shadow-sky-500/30",
+    hoverShadow: "hover:shadow-sky-500/40",
+    focusRing: "focus:ring-sky-500",
+  },
+  WARNING: {
+    text: "text-amber-400",
+    border: "border-amber-500/40",
+    bg: "bg-amber-950/60",
+    icon: Info,
+    iconColor: "text-amber-400",
+    baseGradientFrom: "from-amber-500",
+    baseGradientTo: "to-amber-600",
+    darkerBg: "bg-amber-600/10",
+    shadow: "shadow-amber-500/30",
+    hoverShadow: "hover:shadow-amber-500/40",
+    focusRing: "focus:ring-amber-500",
+  },
+  DANGER: {
+    text: "text-red-400",
+    border: "border-red-500/40",
+    bg: "bg-red-950/60",
+    icon: XCircle,
+    iconColor: "text-red-400",
+    baseGradientFrom: "from-red-500",
+    baseGradientTo: "to-red-600",
+    darkerBg: "bg-red-600/10",
+    shadow: "shadow-red-500/30",
+    hoverShadow: "hover:shadow-red-500/40",
+    focusRing: "focus:ring-red-500",
+  },
 };
 
-const ScoreBadge = ({ value }: { value: number }) => {
-  const percentage = Math.round(value * 100);
-
-  const getColorClass = (val: number) => {
-    if (val >= 0.8) return "bg-green-900/30 text-green-400 border-green-800";
-    if (val >= 0.6) return "bg-blue-900/30 text-blue-400 border-blue-800";
-    if (val >= 0.4) return "bg-yellow-900/30 text-yellow-400 border-yellow-800";
-    return "bg-red-900/30 text-red-400 border-red-800";
-  };
-
-  return (
-    <div
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getColorClass(
-        value
-      )}`}
-    >
-      {percentage}%
-    </div>
-  );
+// Helper function to get status color object based on a numeric value (0-1)
+const getStatusInfo = (value: number) => {
+  if (value >= 0.8) return STATUS_COLORS.SUCCESS;
+  if (value >= 0.6) return STATUS_COLORS.INFO;
+  if (value >= 0.4) return STATUS_COLORS.WARNING;
+  return STATUS_COLORS.DANGER;
 };
 
-const CategoryScore = ({ name, value }: { name: string; value: number }) => {
-  const percentage = Math.round(value * 100);
+// --- Radial Progress Bar Component (Keep as is) ---
+const RadialProgressBar = ({
+  value,
+  size = 80,
+  strokeWidth = 7,
+  baseColor = "stroke-zinc-700/60",
+}: {
+  value: number;
+  size?: number;
+  strokeWidth?: number;
+  baseColor?: string;
+}) => {
+  const shouldReduceMotion = useReducedMotion();
+  const percentage = Math.max(0, Math.min(100, Math.round(value * 100)));
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (percentage / 100) * circumference;
+  const gradientId = `radialGradient-${React.useId()}`;
+  const statusInfo = getStatusInfo(value);
 
-  const getColorClass = (val: number) => {
-    if (val >= 0.8) return "text-green-400";
-    if (val >= 0.6) return "text-blue-400";
-    if (val >= 0.4) return "text-yellow-400";
-    return "text-red-400";
+  // Tailwind color names to Hex mapping (ensure these match your config)
+  const colorMap: Record<string, string> = {
+    "emerald-500": "#10b981",
+    "emerald-600": "#059669",
+    "emerald-400": "#34d399",
+    "sky-500": "#0ea5e9",
+    "sky-600": "#0284c7",
+    "sky-400": "#38bdf8",
+    "amber-500": "#f59e0b",
+    "amber-600": "#d97706",
+    "amber-400": "#fbbf24",
+    "red-500": "#ef4444",
+    "red-600": "#dc2626",
+    "red-400": "#f87171",
   };
+  const getColorName = (tailwindClass: string): string => {
+    const match = tailwindClass.match(
+      /(?:from|to|text|border|bg|shadow)-([a-z]+-\d{2,3})/
+    );
+    return match ? match[1] : "zinc-500";
+  };
+  const progressColorStopFrom =
+    colorMap[getColorName(statusInfo.baseGradientFrom)] || "#71717a";
+  const progressColorStopTo =
+    colorMap[getColorName(statusInfo.baseGradientTo)] || "#a1a1aa";
 
   return (
-    <div className="flex justify-between items-center mb-2">
-      <span className="text-neutral-300 text-sm capitalize">{name}</span>
-      <div className="flex items-center space-x-2 w-40">
-        <ScoreMeter value={value} />
-        <span
-          className={`text-xs font-medium tabular-nums ${getColorClass(value)}`}
-        >
-          {percentage}%
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="-rotate-90"
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={progressColorStopFrom} />
+            <stop offset="100%" stopColor={progressColorStopTo} />
+          </linearGradient>
+        </defs>
+        <circle
+          className={baseColor}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+        <motion.circle
+          stroke={`url(#${gradientId})`}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          fill="transparent"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+          style={{
+            strokeDasharray: circumference,
+            strokeDashoffset: circumference,
+          }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 1.3,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={`text-xl font-semibold ${statusInfo.text}`}>
+          {percentage}
+          <span className="text-xs opacity-80">%</span>
         </span>
       </div>
     </div>
   );
 };
 
-const JobMatchCard = ({ result }: { result: AnalysisResult }) => {
+// --- Category Score Item Component (Keep as is) ---
+const CategoryScoreItem = ({
+  name,
+  value,
+}: {
+  name: string;
+  value: number;
+}) => {
+  const percentage = Math.round(value * 100);
+  const statusInfo = getStatusInfo(value);
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 lg:p-6 mb-6 hover:border-neutral-700 transition-colors duration-200">
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-4">
-        <div className="mb-4 lg:mb-0">
-          <div className="flex items-center mb-2">
-            <h3 className="text-xl font-semibold text-white mr-2">
-              {result.job_details.job_title}
-            </h3>
-            <ScoreBadge value={result.overall_score} />
-          </div>
-
-          <div className="flex items-center space-x-4 text-neutral-400 text-sm">
-            <div className="flex items-center">
-              <svg
-                className="w-4 h-4 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                ></path>
-              </svg>
-              {result.job_details.company_name}
-            </div>
-            <div className="flex items-center">
-              <svg
-                className="w-4 h-4 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                ></path>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                ></path>
-              </svg>
-              {result.job_details.location}
-            </div>
-            <div className="flex items-center">
-              <svg
-                className="w-4 h-4 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-              {result.job_details.job_type}
-            </div>
-          </div>
-        </div>
-
-        <a
-          href={result.job_details.apply_link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:opacity-90 transition-opacity duration-200 text-sm font-medium inline-flex items-center"
-        >
-          Apply Now
-          <svg
-            className="w-4 h-4 ml-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-            ></path>
-          </svg>
-        </a>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="text-lg font-medium text-white">Match Breakdown</h4>
-          <div className="flex items-center">
-            <span className="text-neutral-400 text-sm mr-2">Overall:</span>
-            <ScoreBadge value={result.overall_score} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {Object.entries(result.score_breakdown).map(([category, value]) => (
-            <CategoryScore key={category} name={category} value={value} />
-          ))}
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex items-start">
-          <div className="flex-shrink-0 mt-1">
-            <svg
-              className="w-5 h-5 text-blue-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
-            </svg>
-          </div>
-          <div className="ml-3">
-            <p className="text-neutral-300 text-sm">{result.explanation}</p>
-          </div>
-        </div>
-      </div>
-
-      {result.matching_skills.length > 0 && (
-        <div className="mb-4">
-          <h4 className="text-lg font-medium text-white mb-3">
-            Strong Matching Skills
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {result.matching_skills.map((skill) => (
-              <span
-                key={skill}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/30 text-green-400 border border-green-800"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {result.missing_skills.length > 0 && (
-        <div>
-          <h4 className="text-lg font-medium text-white mb-3">
-            Missing Skills
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {result.missing_skills.map((skill) => (
-              <span
-                key={skill}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/30 text-red-400 border border-red-800"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="flex justify-between items-center space-x-4 py-2.5 border-b border-zinc-800/60 last:border-b-0">
+      <span className="text-sm capitalize text-zinc-300 font-normal">
+        {name.replace(/_/g, " ")}
+      </span>
+      <span className={`text-sm font-medium ${statusInfo.text}`}>
+        {percentage}%
+      </span>
     </div>
   );
 };
 
-const matchQualityLabels = [
-  {
-    min: 0,
-    max: 39,
-    label: "Weak match",
-    description: "Consider focusing on other opportunities",
-    color: "text-red-500",
-  },
-  {
-    min: 40,
-    max: 59,
-    label: "Moderate match",
-    description: "Some alignment, but significant gaps",
-    color: "text-yellow-500",
-  },
-  {
-    min: 60,
-    max: 79,
-    label: "Good match",
-    description: "Strong alignment with room for improvement",
-    color: "text-blue-500",
-  },
-  {
-    min: 80,
-    max: 100,
-    label: "Excellent match",
-    description: "Near perfect alignment with this role",
-    color: "text-green-500",
-  },
-];
-
-const getMatchQuality = (score: number) => {
-  const percentage = Math.round(score * 100);
+// --- Skill Tag Component (Keep as is) ---
+const SkillTag = ({
+  skill,
+  type,
+}: {
+  skill: string;
+  type: "matching" | "missing";
+}) => {
+  const statusInfo =
+    type === "matching" ? STATUS_COLORS.SUCCESS : STATUS_COLORS.DANGER;
+  const IconComponent = statusInfo.icon;
   return (
-    matchQualityLabels.find(
-      (q) => percentage >= q.min && percentage <= q.max
-    ) || matchQualityLabels[0]
+    <motion.div
+      whileHover={{ scale: 1.06, y: -1 }}
+      transition={{ type: "spring", stiffness: 400, damping: 15 }}
+      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium cursor-default border ${statusInfo.bg} ${statusInfo.text} ${statusInfo.border} shadow-sm`}
+    >
+      <IconComponent size={14} className={statusInfo.iconColor} />
+      <span>{skill}</span>
+    </motion.div>
   );
 };
 
+// --- Job Match Card Component (UPDATED with parsedResumeId and new log handler) ---
+const JobMatchCard = ({
+  result,
+  parsedResumeId, // <-- Receive parsed_resume_id
+  index,
+}: {
+  result: JobMatchResult; // <-- Use JobMatchResult type
+  parsedResumeId: number | null | undefined; // <-- Type for the new prop
+  index: number;
+}) => {
+  // Updated click handler to log both IDs
+  const handleLogIdClick = () => {
+    const originalId = result.original_job_id ?? "N/A"; // Handle null/undefined
+    const resumeId = parsedResumeId ?? "N/A"; // Handle null/undefined
+
+    console.log("Original Job ID:", originalId);
+    console.log("Parsed Resume ID:", resumeId);
+
+    // Use a single toast notification for clarity
+    toast.info(
+      `Original Job ID: ${originalId}\nParsed Resume ID: ${resumeId}`,
+      {
+        description: `Details for: ${result.job_details.job_title}`, // Optional description
+        duration: 5000, // Optional: make toast stay longer
+      }
+    );
+  };
+
+  const cardVariants = {
+    hidden: { opacity: 0, scale: 0.95, y: 40 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+        delay: index * 0.1,
+        ease: [0.22, 1, 0.36, 1],
+      },
+    },
+  };
+
+  const score = result.overall_score;
+  const statusInfo = getStatusInfo(score);
+  const applyButtonGradient = `${statusInfo.baseGradientFrom} ${statusInfo.baseGradientTo}`;
+  const applyButtonShadow = statusInfo.shadow;
+  const applyButtonHoverShadow = statusInfo.hoverShadow;
+  const applyButtonFocusRing = statusInfo.focusRing;
+
+  return (
+    <motion.article
+      layout
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.3 } }}
+      className={`relative bg-gradient-to-br from-zinc-900/80 via-zinc-950/80 to-zinc-950/95 backdrop-blur-sm border border-zinc-700/50 rounded-xl shadow-lg overflow-hidden transition-all duration-300 group hover:border-zinc-600/80 hover:shadow-glow-lg hover:-translate-y-1.5`}
+    >
+      <div className="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+        {/* === Left Column: Score, Meta Info, Actions === */}
+        <div className="lg:col-span-4 flex flex-col items-center lg:items-start text-center lg:text-left">
+          <div className="flex justify-center lg:justify-start w-full mb-6">
+            <RadialProgressBar value={score} size={80} strokeWidth={7} />
+          </div>
+          <h3 className="text-xl lg:text-2xl font-semibold text-zinc-100 leading-tight mb-4">
+            {result.job_details.job_title}
+          </h3>
+          <div className="space-y-2.5 text-zinc-300 text-sm font-normal mb-8">
+            <div
+              className="flex items-center justify-center lg:justify-start gap-2"
+              title="Company"
+            >
+              <Building size={16} className="text-zinc-500" />
+              <span>{result.job_details.company_name || "N/A"}</span>
+            </div>
+            <div
+              className="flex items-center justify-center lg:justify-start gap-2"
+              title="Location"
+            >
+              <MapPin size={16} className="text-zinc-500" />
+              <span>{result.job_details.location || "N/A"}</span>
+            </div>
+            <div
+              className="flex items-center justify-center lg:justify-start gap-2"
+              title="Job Type"
+            >
+              <Clock size={16} className="text-zinc-500" />
+              <span>{result.job_details.job_type || "N/A"}</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-stretch gap-3 w-full max-w-xs mx-auto lg:mx-0">
+            {/* Apply Now Button (Handle null link) */}
+            <motion.a
+              whileHover={{
+                scale: !result.job_details.apply_link ? 1 : 1.03, // Disable hover effect if no link
+                y: !result.job_details.apply_link ? 0 : -2,
+                boxShadow: !result.job_details.apply_link
+                  ? "none"
+                  : `0 10px 25px -5px ${statusInfo.shadow
+                      .replace("shadow-", "rgba(")
+                      .replace("/30", ", 0.4)")}`,
+              }}
+              whileTap={
+                !result.job_details.apply_link ? {} : { scale: 0.97, y: 0 }
+              }
+              href={result.job_details.apply_link ?? undefined} // Set href to undefined if null
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`px-5 py-3 bg-gradient-to-r ${applyButtonGradient} text-white rounded-lg transition-all duration-300 text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-md ${applyButtonShadow} ${applyButtonHoverShadow} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 ${applyButtonFocusRing} ${
+                !result.job_details.apply_link
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`} // Style as disabled if no link
+              aria-disabled={!result.job_details.apply_link}
+              onClick={(e) =>
+                !result.job_details.apply_link && e.preventDefault()
+              } // Prevent navigation if no link
+            >
+              <span>Apply Now</span> <ExternalLink size={16} />
+            </motion.a>
+            {/* Log IDs Button (Secondary) */}
+            <motion.button
+              whileHover={{
+                scale: 1.03,
+                backgroundColor: "rgba(63, 63, 70, 0.7)",
+              }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleLogIdClick}
+              title="Log Original Job ID and Resume ID to console/toast"
+              className="px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-zinc-300 hover:text-zinc-100 rounded-lg transition-colors duration-200 text-sm font-medium inline-flex items-center justify-center gap-2 border border-zinc-700/70 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-950 focus:ring-zinc-500"
+            >
+              <Code size={16} /> <span>Log IDs</span>{" "}
+            </motion.button>
+          </div>
+        </div>
+
+        {/* === Right Column: Detailed Analysis === */}
+        <div className="lg:col-span-8 space-y-8 pt-1">
+          <div>
+            <h4 className="text-lg font-medium text-zinc-200 mb-4 flex items-center gap-2.5">
+              <BarChart size={20} className="text-sky-400" /> Match Analysis
+            </h4>
+            <div className="bg-zinc-950/50 border border-zinc-800/60 rounded-lg p-5 space-y-1.5 backdrop-blur-sm">
+              {Object.entries(result.score_breakdown).map(
+                ([category, value]) => (
+                  <CategoryScoreItem
+                    key={category}
+                    name={category}
+                    value={value}
+                  />
+                )
+              )}
+            </div>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium text-zinc-200 mb-4 flex items-center gap-2.5">
+              <Info size={20} className="text-purple-400" /> AI Summary
+            </h4>
+            <div className="bg-gradient-to-br from-zinc-800/40 to-zinc-900/30 border border-zinc-700/60 rounded-lg p-5 backdrop-blur-sm">
+              <p className="text-zinc-300 text-sm leading-relaxed font-normal">
+                {result.explanation || "No summary available."}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+            {result.matching_skills?.length > 0 && (
+              <div>
+                <h4 className="text-base font-medium text-zinc-200 mb-3.5 flex items-center gap-2">
+                  <CheckCircle size={16} className="text-emerald-400" />
+                  Strong Skills ({result.matching_skills.length})
+                </h4>
+                <div className="flex flex-wrap gap-2.5">
+                  {result.matching_skills.map((skill) => (
+                    <SkillTag key={skill} skill={skill} type="matching" />
+                  ))}
+                </div>
+              </div>
+            )}
+            {result.missing_skills?.length > 0 && (
+              <div>
+                <h4 className="text-base font-medium text-zinc-200 mb-3.5 flex items-center gap-2">
+                  <XCircle size={16} className="text-red-400" />
+                  Skill Gaps ({result.missing_skills.length})
+                </h4>
+                <div className="flex flex-wrap gap-2.5">
+                  {result.missing_skills.map((skill) => (
+                    <SkillTag key={skill} skill={skill} type="missing" />
+                  ))}
+                </div>
+              </div>
+            )}
+            {(result.matching_skills?.length ?? 0) === 0 &&
+              (result.missing_skills?.length ?? 0) === 0 && (
+                <div className="sm:col-span-2 text-center text-zinc-500 text-sm py-4">
+                  No specific skill matches or gaps identified.
+                </div>
+              )}
+          </div>
+        </div>
+      </div>
+    </motion.article>
+  );
+};
+
+// --- Main Page Component  ---
 export default function AnalysisResultsPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const { results, jobIds } = useAnalysisStore();
 
-  // Validate results with Zod
-  const validatedResults = results
-    .map((result) => {
-      try {
-        return AnalysisResultSchema.parse(result);
-      } catch (error) {
-        console.error("Validation error for result:", result, error);
-        return null;
-      }
-    })
-    .filter(Boolean);
+  // --- Store Interaction ---
+  // Select state slices individually to prevent infinite loops with object selectors
+  const results = useAnalysisStore((state) => state.results); // Assuming 'results' holds the MatchResponse object
+  const jobIds = useAnalysisStore((state) => state.jobIds);
 
+  // --- State (UPDATED) ---
+  const [displayMatches, setDisplayMatches] = useState<JobMatchResult[]>([]); // State for the array of matches
+  const [parsedResumeId, setParsedResumeId] = useState<
+    number | null | undefined
+  >(undefined); // State for the top-level resume ID
+  const [showSortingOptions, setShowSortingOptions] = useState(false);
+
+  // --- Effect Hook for Data Processing ---
   useEffect(() => {
-    console.log("Validated results:", validatedResults);
+    setIsLoading(true); // Start loading
 
-    if (validatedResults.length === 0) {
-      toast.error("No valid analysis results found");
+    // 1. Check if the results object exists
+    if (!results) {
+      console.warn("No analysis results data found in store.");
+      // Don't show error yet, might just be navigating away
+      // Only show error if we expected data (e.g., based on jobIds)
+      if (jobIds && jobIds.length > 0) {
+        toast.warning("Analysis data is missing. Returning to matching.");
+      }
       router.push(`/match${jobIds ? `?jobs=${jobIds}` : ""}`);
+      // No need to setIsLoading(false) here, navigation handles it.
       return;
     }
 
-    setIsLoading(false);
-  }, [validatedResults, router, jobIds]);
+    // 2. Validate the entire results object against MatchResponseSchema
+    const parseResult = MatchResponseSchema.safeParse(results);
 
+    // 3. Handle Validation Failure
+    if (!parseResult.success) {
+      console.error(
+        "Zod Validation Error (MatchResponseSchema):",
+        parseResult.error.flatten()
+      );
+      console.error("Invalid data object received:", results);
+      toast.error(
+        "The analysis results structure is invalid. Please try again."
+      );
+      router.push(`/match${jobIds ? `?jobs=${jobIds}` : ""}`);
+      return; // Exit if validation fails
+    }
+
+    // 4. Handle Validation Success
+    const validatedData = parseResult.data;
+    const matches = validatedData.matches ?? [];
+    const resumeId = validatedData.parsed_resume_id; // Extract resume ID (can be null/undefined)
+
+    setParsedResumeId(resumeId); // Store the resume ID in state
+
+    // 5. Sort the valid matches (if any)
+    const sortedMatches = [...matches].sort(
+      (a, b) => b.overall_score - a.overall_score
+    );
+    setDisplayMatches(sortedMatches); // Update state with sorted matches
+
+    // 6. Finish Loading (add a small delay for smoother transition)
+    const timer = setTimeout(() => setIsLoading(false), 300); // Reduced delay slightly
+    return () => clearTimeout(timer);
+
+    // Dependencies: The raw results object, router, and jobIds (for fallback navigation)
+  }, [results, router, jobIds]);
+
+  // --- Memoized Calculations (UPDATED to use displayMatches) ---
+  const highestMatchScore = useMemo(
+    () =>
+      displayMatches.length > 0
+        ? Math.max(...displayMatches.map((r) => r.overall_score))
+        : 0,
+    [displayMatches] // Dependency updated
+  );
+
+  const averageScore = useMemo(
+    () =>
+      displayMatches.length > 0
+        ? displayMatches.reduce(
+            (sum, result) => sum + result.overall_score,
+            0
+          ) / displayMatches.length
+        : 0,
+    [displayMatches] // Dependency updated
+  );
+
+  const averageMatchQuality = useMemo(() => {
+    const score = averageScore;
+    const statusInfo = getStatusInfo(score);
+    let label = "Weak Match";
+    if (score >= 0.8) label = "Excellent Match";
+    else if (score >= 0.6) label = "Good Match";
+    else if (score >= 0.4) label = "Moderate Match";
+    const IconComponent = statusInfo.icon;
+    return {
+      label: label,
+      icon: <IconComponent size={24} className={statusInfo.text} />,
+      colorClass: statusInfo.text,
+    };
+  }, [averageScore]);
+
+  // --- Conditional Rendering: Loading State ---
   if (isLoading) {
     return (
       <PublicLayout>
-        <div className="min-h-screen bg-black flex items-center justify-center p-4">
-          <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-600 mb-4" />
-            <p className="text-neutral-400">Loading your resume matches...</p>
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+          <div className="flex flex-col items-center text-center gap-3">
+            <Loader2 className="h-12 w-12 animate-spin text-brand-accent-from" />
+            <p className="text-zinc-200 text-xl font-medium">
+              Analyzing Matches
+            </p>
+            <p className="text-zinc-400 text-base font-light animate-pulse">
+              Crafting your results...
+            </p>
           </div>
         </div>
       </PublicLayout>
     );
   }
 
-  // Calculate average match score
-  const averageScore =
-    validatedResults.length > 0
-      ? validatedResults.reduce(
-          (sum, result) => sum + result.overall_score,
-          0
-        ) / validatedResults.length
-      : 0;
+  // --- Prepare Data for Summary Cards (UPDATED to use displayMatches) ---
+  const summaryData: {
+    icon: ReactNode;
+    title: string;
+    value: string | ReactNode;
+    description?: string;
+    valueColorClass?: string;
+  }[] = [
+    {
+      icon: <FileText size={24} className="text-white" />,
+      title: "Jobs Analyzed",
+      value: `${displayMatches.length}`, // Use displayMatches length
+      valueColorClass: "text-zinc-100",
+    },
+    {
+      icon: averageMatchQuality.icon,
+      title: "Average Match",
+      value: `${Math.round(averageScore * 100)}%`,
+      description: averageMatchQuality.label,
+      valueColorClass: averageMatchQuality.colorClass,
+    },
+    {
+      icon: <TrendingUp size={24} className="text-white" />,
+      title: "Highest Match",
+      value: `${Math.round(highestMatchScore * 100)}%`,
+      description:
+        displayMatches.length > 0
+          ? displayMatches[0].job_details.job_title
+          : "N/A", // Get title from top match
+      valueColorClass: getStatusInfo(highestMatchScore).text, // Color based on highest score
+    },
+  ];
 
-  const averageMatchQuality = getMatchQuality(averageScore);
-
+  // --- Main Page Render ---
   return (
     <PublicLayout>
-      <div className="text-white p-4 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center mb-4">
-              <Sparkles className="w-8 h-8 text-purple-500 mr-2" />
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Analysis Results
-              </h1>
-            </div>
-
-            <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 mb-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-neutral-400">Jobs analyzed</p>
-                  <h2 className="text-2xl font-bold text-white">
-                    {results.length} positions
-                  </h2>
-                </div>
-
-                <div>
-                  <p className="text-neutral-400">Average match</p>
-                  <div className="flex items-center">
-                    <ScoreBadge value={averageScore} />
-                    <span
-                      className={`ml-2 font-medium ${averageMatchQuality.color}`}
-                    >
-                      {averageMatchQuality.label}
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <button
-                    onClick={() => router.push("/match")}
-                    className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md transition-colors duration-200 flex items-center"
-                  >
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                      ></path>
-                    </svg>
-                    Back to matching
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <p className="text-neutral-400">
-              Your resume has been analyzed against {results.length} job
-              positions. Below you&apos;ll see how well you match with each
-              opportunity.
-            </p>
-          </div>
-
-          {/* Sorting/filtering controls - can be added later */}
-
-          {/* Results list */}
-          <div className="space-y-6">
-            {/* Sorting selector */}
-
-            {/* Job matches */}
-            {results
-              .sort((a, b) => b.overall_score - a.overall_score)
-              .map((result) => (
-                <JobMatchCard key={result.job_id} result={result} />
-              ))}
-          </div>
-        </div>
+      {/* Background Glow Effects */}
+      <div className="fixed inset-0 -z-20 overflow-hidden bg-zinc-950 pointer-events-none">
+        <div
+          className={`absolute top-0 left-1/4 w-[45rem] h-[45rem] bg-gradient-radial from-brand-accent-from/8 via-transparent to-transparent blur-3xl -translate-x-1/2 opacity-60 animate-pulse-slow`}
+        ></div>
+        <div
+          className={`absolute bottom-0 right-1/4 w-[45rem] h-[45rem] bg-gradient-radial from-brand-accent-to/8 via-transparent to-transparent blur-3xl translate-x-1/2 opacity-60 animate-pulse-slow animation-delay-3000`}
+        ></div>
+        {/* Optional Grid Pattern: <div className="absolute inset-0 bg-[url('/path/to/grid.svg')] opacity-5"></div> */}
       </div>
+      {/* Main Content Area */}
+      <div className="bg-transparent text-white min-h-screen font-sans relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+          {/* === Header Section === */}
+          <motion.div
+            initial={{ opacity: 0, y: -25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="mb-14 md:mb-20"
+          >
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 mb-8">
+              <h1
+                className={`text-4xl md:text-5xl font-bold ${ACCENT_TEXT_GRADIENT} flex items-center gap-3.5`}
+              >
+                <Sparkles className="w-10 h-10 opacity-90 text-brand-accent-to" />
+                <span>Analysis Results</span>
+              </h1>
+              <motion.button
+                whileHover={{
+                  scale: 1.04,
+                  background:
+                    "linear-gradient(to right, var(--color-brand-accent-from, #8B5CF6), var(--color-brand-accent-to, #EC4899))",
+                  color: "#fff",
+                  borderColor: "transparent",
+                }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() =>
+                  router.push(`/match${jobIds ? `?jobs=${jobIds}` : ""}`)
+                }
+                className="px-5 py-2.5 bg-zinc-800/70 text-zinc-200 hover:text-white rounded-lg transition-all duration-300 flex items-center gap-2 text-sm border border-zinc-700 shadow-sm group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:ring-brand-accent-to"
+              >
+                <ArrowLeft
+                  size={16}
+                  className="transition-transform duration-200 group-hover:-translate-x-1"
+                />
+                <span>Back to Match</span>
+              </motion.button>
+            </div>
+            {/* Page Subtitle (Updated to use displayMatches.length) */}
+            <p className="text-zinc-300 text-lg md:text-xl max-w-3xl font-normal">
+              Here&apos;s how your profile aligns with {displayMatches.length}{" "}
+              {displayMatches.length === 1 ? "opportunity" : "opportunities"}.
+              Results sorted by highest match score.
+            </p>
+          </motion.div>
+
+          {/* === Summary Section === */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.25 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-14 md:mb-20"
+          >
+            {summaryData.map((item, i) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.6,
+                  delay: 0.35 + i * 0.12,
+                  ease: "easeOut",
+                }}
+                className="bg-zinc-900/50 border border-zinc-700/40 rounded-xl p-6 backdrop-blur-lg shadow-lg flex items-start gap-5 transition-all duration-200 hover:bg-zinc-800/60 hover:border-zinc-600/60"
+              >
+                <div
+                  className={`p-3 bg-gradient-to-br ${ACCENT_GRADIENT} rounded-lg mt-1 flex-shrink-0 shadow-inner shadow-white/10`}
+                >
+                  {item.icon}
+                </div>
+                <div className="flex-grow">
+                  <p className="text-zinc-400 text-sm font-medium mb-1">
+                    {item.title}
+                  </p>
+                  <h2
+                    className={`text-2xl font-semibold ${
+                      item.valueColorClass || "text-zinc-100"
+                    } leading-tight`}
+                  >
+                    {item.value}
+                  </h2>
+                  {item.description && (
+                    <p
+                      className="text-xs text-zinc-500 mt-1.5 font-normal truncate"
+                      title={item.description}
+                    >
+                      {item.description}
+                    </p>
+                  )}{" "}
+                  {/* Added truncate */}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* === Controls Row (Placeholder/Future Feature) === */}
+          <div className="mb-10 flex justify-end">
+            <motion.button
+              whileHover={{
+                scale: 1.03,
+                backgroundColor: "rgba(63, 63, 70, 0.7)",
+              }}
+              whileTap={{ scale: 0.98 }}
+              className="px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-zinc-300 hover:text-zinc-100 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm border border-zinc-700/70 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-950 focus:ring-zinc-500"
+              title="Sort or filter results (feature coming soon)"
+              disabled // Keep disabled for now
+              onClick={() => setShowSortingOptions(!showSortingOptions)}
+            >
+              <Filter size={16} />
+              <span>Sort / Filter</span>
+              <ChevronDown
+                size={16}
+                className={`opacity-70 transition-transform duration-200 ${
+                  showSortingOptions ? "rotate-180" : ""
+                }`}
+              />
+            </motion.button>
+          </div>
+
+          {/* === Results List (UPDATED to use displayMatches and pass parsedResumeId) === */}
+          <AnimatePresence mode="popLayout">
+            <motion.div layout className="space-y-8 md:space-y-10">
+              {displayMatches.map((matchResult, index) => (
+                <JobMatchCard
+                  key={matchResult.job_id} // Use the unique job_id from the result
+                  result={matchResult}
+                  parsedResumeId={parsedResumeId} // Pass the top-level resume ID
+                  index={index}
+                />
+              ))}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* === No Results Message (Conditional, checks displayMatches) === */}
+          {/* Only show if not loading AND there are no matches to display */}
+          {displayMatches.length === 0 && !isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-center py-24"
+            >
+              <Target size={52} className="mx-auto text-zinc-600 mb-6" />
+              <p className="text-zinc-300 text-xl mb-3">
+                No Matching Results Found
+              </p>
+              <p className="text-zinc-500 text-base font-light max-w-md mx-auto">
+                We couldn&apos;t find any jobs matching your profile based on
+                the current analysis. Try analyzing different job postings or
+                adjusting your profile details.
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => router.push("/match")} // Navigate back to match/input page
+                className={`mt-8 px-5 py-2.5 bg-gradient-to-r ${ACCENT_GRADIENT} text-white rounded-lg transition-all duration-300 text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:ring-brand-accent-to`}
+              >
+                Analyze More Jobs
+              </motion.button>
+            </motion.div>
+          )}
+        </div>{" "}
+        {/* End max-w-7xl container */}
+      </div>{" "}
+      {/* End main content area */}
     </PublicLayout>
   );
 }

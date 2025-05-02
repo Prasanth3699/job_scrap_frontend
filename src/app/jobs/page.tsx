@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useJobStore } from "@/stores/jobStore";
 import JobFilters from "@/components/jobs/JobFilters";
@@ -11,17 +11,28 @@ import { Filter, Sparkles } from "lucide-react";
 import Script from "next/script";
 import PublicLayout from "@/components/layout/PublicLayout";
 
+// Use a simple debounce util if not already provided elsewhere
+function useDebounce<T>(value: T, delay: number) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+
+  return debounced;
+}
+
 export default function JobsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { ref, inView } = useInView();
+
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [isSelectionModeActive, setIsSelectionModeActive] = useState(false);
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
 
-  const matchButtonRef = useRef(null);
-  const gsapLoadedRef = useRef(false);
-
+  // Filters and store
   const {
     jobs,
     filters,
@@ -38,7 +49,16 @@ export default function JobsPage() {
     resetStore,
   } = useJobStore();
 
-  // GSAP animation effect for the match button
+  // Ref for GSAP button animation
+  const matchButtonRef = useRef<HTMLButtonElement | null>(null);
+  const gsapLoadedRef = useRef(false);
+
+  // --- Filter UI: central input state for 'search', possibly others ---
+  // Debounce only searchQuery, NOT the entire filter object!
+  const [searchInput, setSearchInput] = useState(filters.searchQuery || "");
+  const debouncedSearch = useDebounce(searchInput, 500);
+
+  // ------------------- GSAP Animation Effect -------------------
   useEffect(() => {
     if (
       selectedJobs.length > 0 &&
@@ -47,22 +67,14 @@ export default function JobsPage() {
     ) {
       import("gsap").then(({ gsap }) => {
         gsapLoadedRef.current = true;
-
-        // Clear any existing animations
         gsap.killTweensOf(matchButtonRef.current);
-
-        // Create a timeline for the animation sequence
         const tl = gsap.timeline({ paused: true });
-
-        // Add glow effect with CSS
         gsap.set(matchButtonRef.current, {
-          boxShadow: "0 0 0 rgba(79, 70, 229, 0.4)",
+          boxShadow: "0 0 0 rgba(79,70,229,0.4)",
         });
-
-        // Sequence of animations
         tl.to(matchButtonRef.current, {
           scale: 1.05,
-          boxShadow: "0 0 15px rgba(79, 70, 229, 0.7)",
+          boxShadow: "0 0 15px rgba(79,70,229,0.7)",
           duration: 0.5,
           ease: "power1.inOut",
         })
@@ -100,19 +112,12 @@ export default function JobsPage() {
             x: 0,
             y: 0,
             scale: 1,
-            boxShadow: "0 0 0 rgba(79, 70, 229, 0.4)",
+            boxShadow: "0 0 0 rgba(79,70,229,0.4)",
             duration: 0.5,
             ease: "power1.inOut",
           });
-
-        // Play the animation
         tl.play();
-
-        // Animation cycle
-        const intervalId = setInterval(() => {
-          tl.restart();
-        }, 5000); // Play every 5 seconds
-
+        const intervalId = setInterval(() => tl.restart(), 5000);
         return () => {
           clearInterval(intervalId);
           gsap.killTweensOf(matchButtonRef.current);
@@ -130,7 +135,6 @@ export default function JobsPage() {
       gsapLoadedRef.current &&
       typeof window !== "undefined"
     ) {
-      // Stop animation when no jobs are selected
       import("gsap").then(({ gsap }) => {
         gsap.killTweensOf(matchButtonRef.current);
         gsap.set(matchButtonRef.current, {
@@ -143,95 +147,93 @@ export default function JobsPage() {
     }
   }, [selectedJobs]);
 
-  // Fetch jobs with current filters
-  const fetchJobs = async (page: number, isAppending = false) => {
-    if (loading || (isAppending && !hasMore)) return;
+  // ---------- Filtering, Fetching, and Infinite Scroll ------------
 
-    try {
+  // Single fetch function: page + filterObj + append
+  const fetchJobs = useCallback(
+    async (page: number, filterSet, append = false) => {
+      if (loading) return;
+
       setLoading(true);
+      try {
+        const cleanFilters = {
+          page,
+          limit: 10,
+          ...(filterSet.searchQuery && { search: filterSet.searchQuery }),
+          ...(filterSet.jobTypes?.length > 0 && {
+            jobTypes: filterSet.jobTypes,
+          }),
+          ...(filterSet.experienceLevels?.length > 0 && {
+            experienceLevels: filterSet.experienceLevels,
+          }),
+          ...(filterSet.locations?.length > 0 && {
+            locations: filterSet.locations,
+          }),
+          ...(filterSet.salaryRange && { salaryRange: filterSet.salaryRange }),
+        };
 
-      // Prepare clean filters
-      const cleanFilters = {
-        page,
-        limit: 10,
-        ...(filters.searchQuery && { search: filters.searchQuery }),
-        ...(filters.jobTypes?.length > 0 && { jobTypes: filters.jobTypes }),
-        ...(filters.experienceLevels?.length > 0 && {
-          experienceLevels: filters.experienceLevels,
-        }),
-        ...(filters.locations?.length > 0 && {
-          locations: filters.locations,
-        }),
-        ...(filters.salaryRange && {
-          salaryRange: filters.salaryRange,
-        }),
-      };
+        const response = await jobsApi.getJobs(cleanFilters);
+        const responseData = response.data || response;
+        const { jobs: newJobs, total } = responseData;
 
-      const response = await jobsApi.getJobs(cleanFilters);
-      // Handle both interceptor-modified response and regular response
-      const responseData = response.data || response;
-      const { jobs: responseJobs, total } = responseData;
-
-      if (isAppending) {
-        appendJobs(responseJobs);
-      } else {
-        setJobs(responseJobs);
-      }
-
-      setTotalPages(Math.ceil(total / 10));
-      setHasMore(page < Math.ceil(total / 10));
-      setCurrentPage(page);
-
-      // Update URL with current filters and pagination
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("page", page.toString());
-
-      Object.entries(filters).forEach(([key, value]) => {
-        if (Array.isArray(value) && value.length > 0) {
-          newParams.set(key, JSON.stringify(value));
-        } else if (typeof value === "string" && value) {
-          newParams.set(key, value);
-        } else if (typeof value === "number") {
-          newParams.set(key, value.toString());
+        if (append) {
+          appendJobs(newJobs);
+        } else {
+          setJobs(newJobs);
         }
-      });
 
-      router.push(`/jobs?${newParams.toString()}`, { scroll: false });
-    } catch (error) {
-      console.error("Error fetching jobs:", error);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const totalPages = Math.ceil(total / 10);
+        setTotalPages(totalPages);
+        setHasMore(page < totalPages);
+        setCurrentPage(page);
 
-  // Infinite scroll effect
-  useEffect(() => {
-    if (inView && hasMore && !loading) {
-      fetchJobs(currentPage + 1, true);
-    }
-  }, [inView, hasMore, loading]);
-
-  // Initialize from URL on first load
-  useEffect(() => {
-    const initializeFromUrl = () => {
-      interface UrlFilters {
-        searchQuery?: string;
-        jobTypes?: string[];
-        experienceLevels?: string[];
-        locations?: string[];
-        salaryRange?: { min: number; max: number } | null;
-        [key: string]:
-          | string
-          | string[]
-          | { min: number; max: number }
-          | null
-          | undefined;
+        // Update URL exactly once per fetch
+        const newParams = new URLSearchParams();
+        newParams.set("page", page.toString());
+        Object.entries(filterSet).forEach(([key, value]) => {
+          if (Array.isArray(value) && value.length > 0) {
+            newParams.set(key, JSON.stringify(value));
+          } else if (typeof value === "string" && value) {
+            newParams.set(key, value);
+          } else if (typeof value === "number") {
+            newParams.set(key, value.toString());
+          } else if (
+            key === "salaryRange" &&
+            value &&
+            typeof value === "object" &&
+            value.min != null &&
+            value.max != null
+          ) {
+            newParams.set(key, JSON.stringify(value));
+          }
+        });
+        router.replace(`/jobs?${newParams.toString()}`, { scroll: false });
+      } catch (error) {
+        setHasMore(false);
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setLoading(false);
       }
+    },
+    [
+      appendJobs,
+      setHasMore,
+      setJobs,
+      setLoading,
+      setTotalPages,
+      setCurrentPage,
+      router,
+    ]
+  );
 
-      const urlFilters: UrlFilters = {};
-      const page = parseInt(searchParams.get("page") || "1", 10);
-
+  // ---------- Effect: On mount, restore from URL filter/pagination ---------
+  useEffect(() => {
+    const urlFilters: any = {};
+    let initialPage = 1;
+    if (searchParams) {
+      if (searchParams.has("page")) {
+        initialPage = parseInt(searchParams.get("page") + "", 10) || 1;
+      }
       searchParams.forEach((value, key) => {
         if (key === "page") return;
         try {
@@ -240,57 +242,79 @@ export default function JobsPage() {
           urlFilters[key] = value;
         }
       });
-
-      if (Object.keys(urlFilters).length > 0) {
-        setFilters({
-          searchQuery: urlFilters.searchQuery || "",
-          jobTypes: urlFilters.jobTypes || [],
-          experienceLevels: urlFilters.experienceLevels || [],
-          locations: urlFilters.locations || [],
-          salaryRange: urlFilters.salaryRange || null,
-        });
-      }
-
-      fetchJobs(page);
+    }
+    const restoredFilters = {
+      searchQuery: urlFilters.searchQuery || "",
+      jobTypes: urlFilters.jobTypes || [],
+      experienceLevels: urlFilters.experienceLevels || [],
+      locations: urlFilters.locations || [],
+      salaryRange: urlFilters.salaryRange || null,
     };
+    setFilters(restoredFilters); // Set to store
+    setSearchInput(restoredFilters.searchQuery); // Set input for sanity
+    setJobs([]);
+    setCurrentPage(initialPage);
+    fetchJobs(initialPage, restoredFilters, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
-    initializeFromUrl();
-  }, []);
+  // -------------- Effect: Debounced Search (on search bar) -----------------
+  useEffect(() => {
+    // Only do anything if value _actually_ changed
+    if (debouncedSearch !== filters.searchQuery) {
+      // Construct new filter object (preserve other filters)
+      const newFilters = { ...filters, searchQuery: debouncedSearch };
+      setFilters(newFilters);
+      setCurrentPage(1);
+      setJobs([]);
+      fetchJobs(1, newFilters, false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
-  // Handle filter changes
-  const handleFilterChange = (newFilters: typeof filters) => {
-    resetStore();
+  // -------------- Infinite scroll effect (append on inView) --------------
+  useEffect(() => {
+    if (inView && hasMore && !loading) {
+      const nextPage = currentPage + 1;
+      fetchJobs(nextPage, filters, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inView]);
+
+  // -------------- On any filter (not search) change, reset paging --------
+  const handleFilterChange = (newFilters) => {
+    // If only the searchQuery changed, ignore (debounced effect handles that)
+    const { searchQuery, ...rest } = newFilters;
+    const { searchQuery: oldSearchQuery, ...oldRest } = filters;
+    const filtersRestChanged = JSON.stringify(rest) !== JSON.stringify(oldRest);
+
     setFilters(newFilters);
-    fetchJobs(1);
+    setSearchInput(newFilters.searchQuery || "");
+    // Only reset jobs/page if some filter other than input text actually changed.
+    if (filtersRestChanged) {
+      setJobs([]);
+      setCurrentPage(1);
+      fetchJobs(1, newFilters, false);
+    }
   };
 
-  // Toggle job selection
+  // --------------------- SELECTION AND NAV LOGIC ------------------------
   const toggleJobSelection = (jobId: string) => {
     if (!isSelectionModeActive) return;
-
     setSelectedJobs((prev) => {
       if (prev.includes(jobId)) {
         return prev.filter((id) => id !== jobId);
       }
-
-      // Only allow up to 5 selections
-      if (prev.length >= 5) {
-        return prev;
-      }
-
+      if (prev.length >= 5) return prev;
       return [...prev, jobId];
     });
   };
-
-  // Toggle selection mode
   const toggleSelectionMode = () => {
-    setIsSelectionModeActive((prev) => !prev);
-    if (isSelectionModeActive) {
-      setSelectedJobs([]);
-    }
+    setIsSelectionModeActive((prev) => {
+      if (prev) setSelectedJobs([]);
+      return !prev;
+    });
   };
-
-  // Handle job click (either select or navigate)
   const handleJobClick = (jobId: string) => {
     if (isSelectionModeActive) {
       toggleJobSelection(jobId);
@@ -298,21 +322,15 @@ export default function JobsPage() {
       router.push(`/jobs/${jobId}`);
     }
   };
-
-  // Handle match button click
   const handleMatchButtonClick = () => {
     if (selectedJobs.length === 0) return;
-
-    // Convert the array of job IDs to a comma-separated string
-    const jobIdsParam = selectedJobs.join(",");
-
-    // Navigate to the match page with the selected job IDs as URL parameter
-    router.push(`/match?jobs=${jobIdsParam}`);
+    router.push(`/match?jobs=${selectedJobs.join(",")}`);
   };
 
+  // --------------------------- UI ---------------------------------------
   return (
     <PublicLayout>
-      {/* Script tag to load GSAP from CDN */}
+      {/* GSAP (CDN) */}
       <Script
         src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"
         strategy="afterInteractive"
@@ -363,7 +381,6 @@ export default function JobsPage() {
               Browse thousands of opportunities tailored for you
             </p>
           </div>
-
           <button
             className="md:hidden flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             onClick={() => setIsMobileFiltersOpen(true)}
@@ -372,7 +389,6 @@ export default function JobsPage() {
             <span>Filters</span>
           </button>
         </div>
-
         <div className="flex flex-col md:flex-row gap-8">
           {/* Filter sidebar */}
           <aside className="w-full md:w-72 flex-shrink-0">
@@ -381,9 +397,10 @@ export default function JobsPage() {
               onFilterChange={handleFilterChange}
               isMobileOpen={isMobileFiltersOpen}
               setIsMobileFiltersOpen={setIsMobileFiltersOpen}
+              searchInput={searchInput}
+              setSearchInput={setSearchInput}
             />
           </aside>
-
           {/* Main content area */}
           <main className="flex-1">
             {loading && jobs.length === 0 ? (
@@ -398,7 +415,18 @@ export default function JobsPage() {
                 <button
                   onClick={() => {
                     resetStore();
-                    fetchJobs(1);
+                    setSearchInput(""); // clear the filter UI input as well
+                    fetchJobs(
+                      1,
+                      {
+                        searchQuery: "",
+                        jobTypes: [],
+                        experienceLevels: [],
+                        locations: [],
+                        salaryRange: null,
+                      },
+                      false
+                    );
                   }}
                   className="mt-4 text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
                 >
@@ -417,14 +445,12 @@ export default function JobsPage() {
                     </p>
                   )}
                 </div>
-
                 <JobList
                   jobs={jobs}
                   onJobClick={handleJobClick}
                   isSelectionMode={isSelectionModeActive}
                   selectedJobs={selectedJobs}
                 />
-
                 {hasMore && (
                   <div ref={ref} className="h-10">
                     {loading && (

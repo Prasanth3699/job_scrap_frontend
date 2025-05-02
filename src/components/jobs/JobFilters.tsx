@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
 import type { JobFilters } from "@/types";
 import {
   X,
@@ -11,8 +10,7 @@ import {
   Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useState } from "react";
 
 const jobTypes = ["Full-time", "Part-time", "Contract", "Remote", "Internship"];
 const experienceLevels = [
@@ -28,6 +26,8 @@ interface JobFiltersProps {
   onFilterChange: (filters: JobFilters) => void;
   isMobileOpen: boolean;
   setIsMobileFiltersOpen: (isOpen: boolean) => void;
+  searchInput: string;
+  setSearchInput: (value: string) => void;
 }
 
 export default function JobFilters({
@@ -35,17 +35,13 @@ export default function JobFilters({
   onFilterChange,
   isMobileOpen,
   setIsMobileFiltersOpen,
+  searchInput,
+  setSearchInput,
 }: JobFiltersProps) {
-  const [inputValue, setInputValue] = useState(filters.searchQuery || "");
   const [expandedSections, setExpandedSections] = useState({
     jobType: true,
     experience: true,
   });
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const debouncedSearch = useDebounce(inputValue, 500);
 
   // Toggle section expansion
   const toggleSection = (section: "jobType" | "experience") => {
@@ -55,82 +51,7 @@ export default function JobFilters({
     }));
   };
 
-  // Handle URL sync with filters
-  const updateURL = (newFilters: JobFilters) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (newFilters.searchQuery) {
-      params.set("q", newFilters.searchQuery);
-    } else {
-      params.delete("q");
-    }
-
-    if (newFilters.jobTypes && newFilters.jobTypes.length > 0) {
-      params.set("types", newFilters.jobTypes.join(","));
-    } else {
-      params.delete("types");
-    }
-
-    if (newFilters.experienceLevels && newFilters.experienceLevels.length > 0) {
-      params.set("exp", newFilters.experienceLevels.join(","));
-    } else {
-      params.delete("exp");
-    }
-
-    if (newFilters.locations && newFilters.locations.length > 0) {
-      params.set("loc", newFilters.locations.join(","));
-    } else {
-      params.delete("loc");
-    }
-
-    if (newFilters.salaryRange) {
-      params.set("salary", newFilters.salaryRange.toString());
-    } else {
-      params.delete("salary");
-    }
-
-    router.replace(`${pathname}?${params.toString()}`);
-  };
-
-  // Handle search with proper debouncing
-  const handleSearchChange = (value: string) => {
-    setInputValue(value);
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    searchTimeoutRef.current = setTimeout(() => {
-      const newFilters = {
-        ...filters,
-        searchQuery: value,
-      };
-      onFilterChange(newFilters);
-      updateURL(newFilters);
-    }, 500);
-  };
-
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Sync filters to input value when filters change externally
-  useEffect(() => {
-    if (debouncedSearch !== filters.searchQuery) {
-      const newFilters = {
-        ...filters,
-        searchQuery: debouncedSearch,
-      };
-      onFilterChange(newFilters);
-      updateURL(newFilters);
-    }
-  }, [debouncedSearch]);
-
+  // Handle checkbox changes for job types and experience levels
   const handleCheckboxChange = (
     category: keyof JobFilters,
     value: string,
@@ -145,23 +66,20 @@ export default function JobFilters({
       ...filters,
       [category]: newValues,
     };
-
     onFilterChange(newFilters);
-    updateURL(newFilters);
   };
 
+  // Clear all filters
   const clearFilters = () => {
-    setInputValue("");
-    const emptyFilters = {
+    setSearchInput("");
+    const emptyFilters: JobFilters = {
       locations: [],
       jobTypes: [],
       experienceLevels: [],
       salaryRange: null,
       searchQuery: "",
     };
-
     onFilterChange(emptyFilters);
-    updateURL(emptyFilters);
   };
 
   // Count active filters for badge display
@@ -181,13 +99,13 @@ export default function JobFilters({
             type="text"
             placeholder="Search jobs..."
             className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            value={inputValue}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
           <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-          {inputValue && (
+          {searchInput && (
             <button
-              onClick={() => handleSearchChange("")}
+              onClick={() => setSearchInput("")}
               className="absolute right-3 top-3 h-5 w-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <X className="h-4 w-4" />

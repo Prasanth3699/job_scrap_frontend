@@ -20,9 +20,8 @@ const HeroSection = forwardRef<HTMLDivElement>(function HeroSection(_, ref) {
       },
     });
   };
-  // Animation effects removed as per request
   return (
-    <section ref={ref} className="pt-40 pb-20 px-6 dark:bg-black">
+    <section ref={ref} className=" pb-20 px-6 dark:bg-black">
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center">
         <div className="space-y-8">
           <h1 className="text-5xl md:text-6xl font-bold leading-tight bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
@@ -102,9 +101,6 @@ const HeroSection = forwardRef<HTMLDivElement>(function HeroSection(_, ref) {
           </div>
         </div>
         <div className="relative">
-          <div className="absolute -top-8 -left-8 w-40 h-40 bg-purple-400/60 dark:bg-purple-600/30 rounded-full filter blur-xl opacity-50 z-[-1]"></div>
-          <div className="absolute -bottom-12 -right-12 w-40 h-40 bg-blue-400/60 dark:bg-blue-600/30 rounded-full filter blur-xl opacity-50 z-[-1]"></div>
-          <div className="absolute -top-16 right-0 w-52 h-52 bg-indigo-400/60 dark:bg-indigo-600/30 rounded-full filter blur-xl opacity-50 z-[-1]"></div>
           <DemoCard />
         </div>
       </div>
