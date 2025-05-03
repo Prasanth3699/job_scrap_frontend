@@ -1,21 +1,21 @@
 // stores/analysis-store.ts
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { MatchResponse } from "@/stores/analysis-schema"; // Import MatchResponse type
+import { AnalysisResult } from "@/stores/analysis-schema";
 
 interface AnalysisStore {
-  results: MatchResponse | null; // Store the whole response object or null
+  results: AnalysisResult[];
   jobIds: string;
-  setResults: (results: MatchResponse | null) => void; // Update setter type
+  setResults: (results: AnalysisResult[]) => void;
   setJobIds: (jobIds: string) => void;
 }
 
 export const useAnalysisStore = create<AnalysisStore>()(
   persist(
     (set) => ({
-      results: null, // Initialize results to null
+      results: [],
       jobIds: "",
-      setResults: (results) => set({ results }), // Setter remains the same logic
+      setResults: (results) => set({ results }),
       setJobIds: (jobIds) => set({ jobIds }),
     }),
     {
@@ -24,5 +24,4 @@ export const useAnalysisStore = create<AnalysisStore>()(
   )
 );
 
-// Export relevant types if needed elsewhere (AnalysisResult might still be useful)
-export type { MatchResponse };
+export type { AnalysisResult };

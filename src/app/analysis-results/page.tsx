@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, ReactNode } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 // --- Library Imports ---
@@ -21,8 +21,6 @@ import {
   FileText,
   Target,
   TrendingUp,
-  Filter,
-  ChevronDown,
   Loader2,
 } from "lucide-react";
 
@@ -31,6 +29,9 @@ import { useAnalysisStore } from "@/stores/analysis-store";
 // Use the correct schema and types from the updated schema file
 import { MatchResponseSchema, JobMatchResult } from "@/stores/analysis-schema";
 import PublicLayout from "@/components/layout/PublicLayout";
+import { useLLMComprehensiveAnalysis } from "@/hooks/llm/use-advanced-analysis";
+import { ResumeJobRequest } from "@/lib/llm/client/types";
+import { useAdvanceAnalysisStore } from "@/stores/advance-analysis-store";
 
 // --- Constants & Helpers ---
 const ACCENT_GRADIENT = "from-brand-accent-from to-brand-accent-to";
@@ -244,30 +245,68 @@ const SkillTag = ({
 // --- Job Match Card Component (UPDATED with parsedResumeId and new log handler) ---
 const JobMatchCard = ({
   result,
-  parsedResumeId, // <-- Receive parsed_resume_id
+  parsedResumeId,
   index,
+  onAdvancedAnalysisClick,
+  isAnalyzing,
 }: {
-  result: JobMatchResult; // <-- Use JobMatchResult type
-  parsedResumeId: number | null | undefined; // <-- Type for the new prop
+  result: JobMatchResult;
+  parsedResumeId: number | null | undefined;
   index: number;
+  onAdvancedAnalysisClick: (payload: ResumeJobRequest) => void;
+  isAnalyzing: boolean;
 }) => {
+  const router = useRouter();
+  const setIsAnalyzing = useAdvanceAnalysisStore(
+    (state) => state.setIsAnalyzing
+  );
+
   // Updated click handler to log both IDs
-  const handleLogIdClick = () => {
-    const originalId = result.original_job_id ?? "N/A"; // Handle null/undefined
-    const resumeId = parsedResumeId ?? "N/A"; // Handle null/undefined
+  const handleAdvancedAnalysisClick = async () => {
+    const originalId = result.original_job_id ?? "N/A";
+    const resumeId = parsedResumeId ?? "N/A";
 
-    console.log("Original Job ID:", originalId);
-    console.log("Parsed Resume ID:", resumeId);
+    try {
+      const payload: ResumeJobRequest = {
+        original_job_id: originalId,
+        parsed_resume_id: resumeId,
+      };
 
-    // Use a single toast notification for clarity
-    toast.info(
-      `Original Job ID: ${originalId}\nParsed Resume ID: ${resumeId}`,
-      {
-        description: `Details for: ${result.job_details.job_title}`, // Optional description
-        duration: 5000, // Optional: make toast stay longer
+      // Set analyzing state to true
+      setIsAnalyzing(true);
+
+      // Redirect to analysis page first
+      router.push("/advance-analysis");
+      // Trigger the analysis
+      const analysisResult = await onAdvancedAnalysisClick(payload);
+
+      if (analysisResult) {
+        // Update store with results
+        useAdvanceAnalysisStore.getState().setResult(analysisResult);
       }
-    );
+
+      // Store the result in localStorage or a global store
+      // localStorage.setItem("analysisResult", JSON.stringify(analysisResult));
+
+      // // Redirect to the analysis page
+      // router.push("/advance-analysis");
+    } catch (error) {
+      console.error("Analysis failed:", error);
+      toast.error("Failed to perform advanced analysis");
+      setIsAnalyzing(false);
+    }
   };
+
+  // onAdvancedAnalysisClick(payload);
+
+  //   toast.info(
+  //     `Original Job ID: ${originalId}\nParsed Resume ID: ${resumeId}`,
+  //     {
+  //       description: `Details for: ${result.job_details.job_title}`,
+  //       duration: 5000,
+  //     }
+  //   );
+  // };
 
   const cardVariants = {
     hidden: { opacity: 0, scale: 0.95, y: 40 },
@@ -332,10 +371,10 @@ const JobMatchCard = ({
             </div>
           </div>
           <div className="flex flex-col items-stretch gap-3 w-full max-w-xs mx-auto lg:mx-0">
-            {/* Apply Now Button (Handle null link) */}
+            {/* Apply Now Button */}
             <motion.a
               whileHover={{
-                scale: !result.job_details.apply_link ? 1 : 1.03, // Disable hover effect if no link
+                scale: !result.job_details.apply_link ? 1 : 1.03,
                 y: !result.job_details.apply_link ? 0 : -2,
                 boxShadow: !result.job_details.apply_link
                   ? "none"
@@ -346,33 +385,46 @@ const JobMatchCard = ({
               whileTap={
                 !result.job_details.apply_link ? {} : { scale: 0.97, y: 0 }
               }
-              href={result.job_details.apply_link ?? undefined} // Set href to undefined if null
+              href={result.job_details.apply_link ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
               className={`px-5 py-3 bg-gradient-to-r ${applyButtonGradient} text-white rounded-lg transition-all duration-300 text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-md ${applyButtonShadow} ${applyButtonHoverShadow} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 ${applyButtonFocusRing} ${
                 !result.job_details.apply_link
                   ? "opacity-50 cursor-not-allowed"
                   : ""
-              }`} // Style as disabled if no link
+              }`}
               aria-disabled={!result.job_details.apply_link}
               onClick={(e) =>
                 !result.job_details.apply_link && e.preventDefault()
-              } // Prevent navigation if no link
+              }
             >
               <span>Apply Now</span> <ExternalLink size={16} />
             </motion.a>
-            {/* Log IDs Button (Secondary) */}
+
+            {/* Advanced Analysis Button */}
             <motion.button
               whileHover={{
-                scale: 1.03,
-                backgroundColor: "rgba(63, 63, 70, 0.7)",
+                scale: !isAnalyzing ? 1.03 : 1,
+                backgroundColor: !isAnalyzing
+                  ? "rgba(63, 63, 70, 0.7)"
+                  : "rgba(63, 63, 70, 0.4)",
               }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleLogIdClick}
-              title="Log Original Job ID and Resume ID to console/toast"
-              className="px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-zinc-300 hover:text-zinc-100 rounded-lg transition-colors duration-200 text-sm font-medium inline-flex items-center justify-center gap-2 border border-zinc-700/70 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-950 focus:ring-zinc-500"
+              whileTap={!isAnalyzing ? { scale: 0.98 } : {}}
+              onClick={handleAdvancedAnalysisClick}
+              disabled={isAnalyzing}
+              title={
+                isAnalyzing
+                  ? "Analyzing..."
+                  : "Perform advanced analysis on this match"
+              }
+              className={`px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-zinc-300 hover:text-zinc-100 rounded-lg transition-all duration-200 text-sm font-medium inline-flex items-center justify-center gap-2 border border-zinc-700/70 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-950 focus:ring-zinc-500 disabled:opacity-60 disabled:cursor-not-allowed`}
             >
-              <Code size={16} /> <span>Log IDs</span>{" "}
+              {isAnalyzing ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Code size={16} />
+              )}
+              <span>{isAnalyzing ? "Analyzing..." : "Advance Analysis"}</span>
             </motion.button>
           </div>
         </div>
@@ -445,113 +497,87 @@ const JobMatchCard = ({
   );
 };
 
-// --- Main Page Component  ---
+// --- Main Page Component ---
 export default function AnalysisResultsPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
   // --- Store Interaction ---
-  // Select state slices individually to prevent infinite loops with object selectors
-  const results = useAnalysisStore((state) => state.results); // Assuming 'results' holds the MatchResponse object
+  const results = useAnalysisStore((state) => state.results);
   const jobIds = useAnalysisStore((state) => state.jobIds);
 
-  // --- State (UPDATED) ---
-  const [displayMatches, setDisplayMatches] = useState<JobMatchResult[]>([]); // State for the array of matches
+  // --- State ---
+  const [displayMatches, setDisplayMatches] = useState<JobMatchResult[]>([]);
   const [parsedResumeId, setParsedResumeId] = useState<
     number | null | undefined
-  >(undefined); // State for the top-level resume ID
-  const [showSortingOptions, setShowSortingOptions] = useState(false);
+  >(undefined);
+
+  // --- Mutation Hook ---
+  const { mutate: triggerAdvancedAnalysis, isPending: isAnalyzing } =
+    useLLMComprehensiveAnalysis();
 
   // --- Effect Hook for Data Processing ---
   useEffect(() => {
-    setIsLoading(true); // Start loading
+    setIsLoading(true);
 
-    // 1. Check if the results object exists
     if (!results) {
-      console.warn("No analysis results data found in store.");
-      // Don't show error yet, might just be navigating away
-      // Only show error if we expected data (e.g., based on jobIds)
-      if (jobIds && jobIds.length > 0) {
-        toast.warning("Analysis data is missing. Returning to matching.");
+      if (jobIds?.length > 0) {
+        toast.warning("Analysis data missing. Returning to matching.");
       }
       router.push(`/match${jobIds ? `?jobs=${jobIds}` : ""}`);
-      // No need to setIsLoading(false) here, navigation handles it.
       return;
     }
 
-    // 2. Validate the entire results object against MatchResponseSchema
     const parseResult = MatchResponseSchema.safeParse(results);
-
-    // 3. Handle Validation Failure
     if (!parseResult.success) {
-      console.error(
-        "Zod Validation Error (MatchResponseSchema):",
-        parseResult.error.flatten()
-      );
-      console.error("Invalid data object received:", results);
-      toast.error(
-        "The analysis results structure is invalid. Please try again."
-      );
+      console.error("Validation Error:", parseResult.error.flatten());
+      toast.error("Invalid analysis results structure");
       router.push(`/match${jobIds ? `?jobs=${jobIds}` : ""}`);
-      return; // Exit if validation fails
+      return;
     }
 
-    // 4. Handle Validation Success
     const validatedData = parseResult.data;
     const matches = validatedData.matches ?? [];
-    const resumeId = validatedData.parsed_resume_id; // Extract resume ID (can be null/undefined)
-
-    setParsedResumeId(resumeId); // Store the resume ID in state
-
-    // 5. Sort the valid matches (if any)
-    const sortedMatches = [...matches].sort(
-      (a, b) => b.overall_score - a.overall_score
+    setParsedResumeId(validatedData.parsed_resume_id);
+    setDisplayMatches(
+      [...matches].sort((a, b) => b.overall_score - a.overall_score)
     );
-    setDisplayMatches(sortedMatches); // Update state with sorted matches
 
-    // 6. Finish Loading (add a small delay for smoother transition)
-    const timer = setTimeout(() => setIsLoading(false), 300); // Reduced delay slightly
+    const timer = setTimeout(() => setIsLoading(false), 300);
     return () => clearTimeout(timer);
-
-    // Dependencies: The raw results object, router, and jobIds (for fallback navigation)
   }, [results, router, jobIds]);
 
-  // --- Memoized Calculations (UPDATED to use displayMatches) ---
+  // --- Memoized Calculations ---
   const highestMatchScore = useMemo(
-    () =>
-      displayMatches.length > 0
-        ? Math.max(...displayMatches.map((r) => r.overall_score))
-        : 0,
-    [displayMatches] // Dependency updated
+    () => Math.max(...displayMatches.map((r) => r.overall_score)),
+    [displayMatches]
   );
 
   const averageScore = useMemo(
     () =>
-      displayMatches.length > 0
-        ? displayMatches.reduce(
-            (sum, result) => sum + result.overall_score,
-            0
-          ) / displayMatches.length
-        : 0,
-    [displayMatches] // Dependency updated
+      displayMatches.reduce((sum, r) => sum + r.overall_score, 0) /
+      displayMatches.length,
+    [displayMatches]
   );
 
+  // --- Helper Function ---
+  const getMatchLabel = (score: number) => {
+    if (score >= 0.8) return "Excellent Match";
+    if (score >= 0.6) return "Good Match";
+    if (score >= 0.4) return "Moderate Match";
+    return "Weak Match";
+  };
+
   const averageMatchQuality = useMemo(() => {
-    const score = averageScore;
-    const statusInfo = getStatusInfo(score);
-    let label = "Weak Match";
-    if (score >= 0.8) label = "Excellent Match";
-    else if (score >= 0.6) label = "Good Match";
-    else if (score >= 0.4) label = "Moderate Match";
-    const IconComponent = statusInfo.icon;
+    const statusInfo = getStatusInfo(averageScore);
     return {
-      label: label,
-      icon: <IconComponent size={24} className={statusInfo.text} />,
+      label: getMatchLabel(averageScore),
+      icon: <statusInfo.icon size={24} className={statusInfo.text} />,
       colorClass: statusInfo.text,
     };
   }, [averageScore]);
 
-  // --- Conditional Rendering: Loading State ---
+  // --- Conditional Loading State ---
   if (isLoading) {
     return (
       <PublicLayout>
@@ -570,18 +596,12 @@ export default function AnalysisResultsPage() {
     );
   }
 
-  // --- Prepare Data for Summary Cards (UPDATED to use displayMatches) ---
-  const summaryData: {
-    icon: ReactNode;
-    title: string;
-    value: string | ReactNode;
-    description?: string;
-    valueColorClass?: string;
-  }[] = [
+  // --- Summary Data ---
+  const summaryData = [
     {
       icon: <FileText size={24} className="text-white" />,
       title: "Jobs Analyzed",
-      value: `${displayMatches.length}`, // Use displayMatches length
+      value: `${displayMatches.length}`,
       valueColorClass: "text-zinc-100",
     },
     {
@@ -595,18 +615,14 @@ export default function AnalysisResultsPage() {
       icon: <TrendingUp size={24} className="text-white" />,
       title: "Highest Match",
       value: `${Math.round(highestMatchScore * 100)}%`,
-      description:
-        displayMatches.length > 0
-          ? displayMatches[0].job_details.job_title
-          : "N/A", // Get title from top match
-      valueColorClass: getStatusInfo(highestMatchScore).text, // Color based on highest score
+      description: displayMatches[0]?.job_details.job_title || "N/A",
+      valueColorClass: getStatusInfo(highestMatchScore).text,
     },
   ];
 
-  // --- Main Page Render ---
+  // --- Main Render ---
   return (
     <PublicLayout>
-      {/* Background Glow Effects */}
       <div className="fixed inset-0 -z-20 overflow-hidden bg-zinc-950 pointer-events-none">
         <div
           className={`absolute top-0 left-1/4 w-[45rem] h-[45rem] bg-gradient-radial from-brand-accent-from/8 via-transparent to-transparent blur-3xl -translate-x-1/2 opacity-60 animate-pulse-slow`}
@@ -614,12 +630,11 @@ export default function AnalysisResultsPage() {
         <div
           className={`absolute bottom-0 right-1/4 w-[45rem] h-[45rem] bg-gradient-radial from-brand-accent-to/8 via-transparent to-transparent blur-3xl translate-x-1/2 opacity-60 animate-pulse-slow animation-delay-3000`}
         ></div>
-        {/* Optional Grid Pattern: <div className="absolute inset-0 bg-[url('/path/to/grid.svg')] opacity-5"></div> */}
       </div>
-      {/* Main Content Area */}
+
       <div className="bg-transparent text-white min-h-screen font-sans relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-          {/* === Header Section === */}
+          {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: -25 }}
             animate={{ opacity: 1, y: 0 }}
@@ -634,27 +649,17 @@ export default function AnalysisResultsPage() {
                 <span>Analysis Results</span>
               </h1>
               <motion.button
-                whileHover={{
-                  scale: 1.04,
-                  background:
-                    "linear-gradient(to right, var(--color-brand-accent-from, #8B5CF6), var(--color-brand-accent-to, #EC4899))",
-                  color: "#fff",
-                  borderColor: "transparent",
-                }}
+                whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() =>
                   router.push(`/match${jobIds ? `?jobs=${jobIds}` : ""}`)
                 }
                 className="px-5 py-2.5 bg-zinc-800/70 text-zinc-200 hover:text-white rounded-lg transition-all duration-300 flex items-center gap-2 text-sm border border-zinc-700 shadow-sm group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:ring-brand-accent-to"
               >
-                <ArrowLeft
-                  size={16}
-                  className="transition-transform duration-200 group-hover:-translate-x-1"
-                />
+                <ArrowLeft className="transition-transform duration-200 group-hover:-translate-x-1" />
                 <span>Back to Match</span>
               </motion.button>
             </div>
-            {/* Page Subtitle (Updated to use displayMatches.length) */}
             <p className="text-zinc-300 text-lg md:text-xl max-w-3xl font-normal">
               Here&apos;s how your profile aligns with {displayMatches.length}{" "}
               {displayMatches.length === 1 ? "opportunity" : "opportunities"}.
@@ -662,7 +667,7 @@ export default function AnalysisResultsPage() {
             </p>
           </motion.div>
 
-          {/* === Summary Section === */}
+          {/* Summary Section */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -691,66 +696,37 @@ export default function AnalysisResultsPage() {
                     {item.title}
                   </p>
                   <h2
-                    className={`text-2xl font-semibold ${
-                      item.valueColorClass || "text-zinc-100"
-                    } leading-tight`}
+                    className={`text-2xl font-semibold ${item.valueColorClass} leading-tight`}
                   >
                     {item.value}
                   </h2>
                   {item.description && (
-                    <p
-                      className="text-xs text-zinc-500 mt-1.5 font-normal truncate"
-                      title={item.description}
-                    >
+                    <p className="text-xs text-zinc-500 mt-1.5 font-normal truncate">
                       {item.description}
                     </p>
-                  )}{" "}
-                  {/* Added truncate */}
+                  )}
                 </div>
               </motion.div>
             ))}
           </motion.div>
 
-          {/* === Controls Row (Placeholder/Future Feature) === */}
-          <div className="mb-10 flex justify-end">
-            <motion.button
-              whileHover={{
-                scale: 1.03,
-                backgroundColor: "rgba(63, 63, 70, 0.7)",
-              }}
-              whileTap={{ scale: 0.98 }}
-              className="px-4 py-2.5 bg-zinc-800/60 hover:bg-zinc-700/80 text-zinc-300 hover:text-zinc-100 rounded-lg transition-colors duration-200 flex items-center gap-2 text-sm border border-zinc-700/70 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-zinc-950 focus:ring-zinc-500"
-              title="Sort or filter results (feature coming soon)"
-              disabled // Keep disabled for now
-              onClick={() => setShowSortingOptions(!showSortingOptions)}
-            >
-              <Filter size={16} />
-              <span>Sort / Filter</span>
-              <ChevronDown
-                size={16}
-                className={`opacity-70 transition-transform duration-200 ${
-                  showSortingOptions ? "rotate-180" : ""
-                }`}
-              />
-            </motion.button>
-          </div>
-
-          {/* === Results List (UPDATED to use displayMatches and pass parsedResumeId) === */}
+          {/* Results List */}
           <AnimatePresence mode="popLayout">
             <motion.div layout className="space-y-8 md:space-y-10">
               {displayMatches.map((matchResult, index) => (
                 <JobMatchCard
-                  key={matchResult.job_id} // Use the unique job_id from the result
+                  key={matchResult.job_id}
                   result={matchResult}
-                  parsedResumeId={parsedResumeId} // Pass the top-level resume ID
+                  parsedResumeId={parsedResumeId}
                   index={index}
+                  onAdvancedAnalysisClick={triggerAdvancedAnalysis}
+                  isAnalyzing={isAnalyzing}
                 />
               ))}
             </motion.div>
           </AnimatePresence>
 
-          {/* === No Results Message (Conditional, checks displayMatches) === */}
-          {/* Only show if not loading AND there are no matches to display */}
+          {/* No Results Message */}
           {displayMatches.length === 0 && !isLoading && (
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -763,24 +739,21 @@ export default function AnalysisResultsPage() {
                 No Matching Results Found
               </p>
               <p className="text-zinc-500 text-base font-light max-w-md mx-auto">
-                We couldn&apos;t find any jobs matching your profile based on
-                the current analysis. Try analyzing different job postings or
-                adjusting your profile details.
+                We couldn&apos;t find any jobs matching your profile. Try
+                analyzing different job postings.
               </p>
               <motion.button
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => router.push("/match")} // Navigate back to match/input page
+                onClick={() => router.push("/match")}
                 className={`mt-8 px-5 py-2.5 bg-gradient-to-r ${ACCENT_GRADIENT} text-white rounded-lg transition-all duration-300 text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 focus:ring-brand-accent-to`}
               >
                 Analyze More Jobs
               </motion.button>
             </motion.div>
           )}
-        </div>{" "}
-        {/* End max-w-7xl container */}
-      </div>{" "}
-      {/* End main content area */}
+        </div>
+      </div>
     </PublicLayout>
   );
 }

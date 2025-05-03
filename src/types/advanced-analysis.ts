@@ -1,11 +1,3 @@
-export interface ResumeJobRequest {
-  // resume: string;
-  // job_description: string;
-
-  original_job_id?: number | string | null;
-  parsed_resume_id?: number | string | null;
-}
-
 export interface SkillGap {
   skill: string;
   priority: "High" | "Medium" | "Low";
@@ -38,7 +30,7 @@ export interface Keywords {
   action_verbs: string[];
 }
 
-export interface JobAnalysisResult {
+export interface AnalysisResult {
   timestamp: string;
   skill_gaps: SkillGap[];
   ats_analysis: ATSAnalysis;

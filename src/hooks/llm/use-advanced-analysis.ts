@@ -5,7 +5,6 @@ import { AxiosError } from "axios";
 import { llmClient } from "@/lib/llm/client/llm-client";
 import {
   ResumeJobRequest,
-  JobAnalysisResult,
   SkillGap,
   ATSAnalysis,
 } from "@/lib/llm/client/types";
@@ -13,6 +12,8 @@ import {
 import { toast } from "sonner";
 import { monitoring } from "@/lib/core/monitoring/monitoring-service";
 import { security } from "@/lib/core/security/security-service";
+import { useAdvanceAnalysisStore } from "@/stores/advance-analysis-store";
+import { AnalysisResult } from "@/types/advanced-analysis";
 
 /* ------------------------------------------------------------ */
 /*  Shared helpers                                              */
@@ -46,14 +47,23 @@ const requireAuth = () => {
 /*  1. Comprehensive analysis                                 */
 /* ────────────────────────────────────────────────────────── */
 export function useLLMComprehensiveAnalysis() {
-  return useMutation<JobAnalysisResult, APIError, ResumeJobRequest>({
+  return useMutation<AnalysisResult, APIError, ResumeJobRequest>({
     mutationFn: async (payload) => {
       requireAuth();
-      return llmClient.analyze(payload);
+      const result = await llmClient.analyze(payload);
+      return result;
     },
-    onMutate: () => monitoring.trackEvent({ name: "llm_analysis_started" }),
-    onSuccess: () => toast.success("Analysis completed"),
-    onError: buildErrorHandler("LLM analysis failed"),
+    onMutate: () => {
+      useAdvanceAnalysisStore.getState().setIsAnalyzing(true);
+    },
+    onSuccess: (data) => {
+      useAdvanceAnalysisStore.getState().setResult(data);
+      toast.success("Analysis completed");
+    },
+    onError: (error) => {
+      useAdvanceAnalysisStore.getState().setIsAnalyzing(false);
+      buildErrorHandler("LLM analysis failed")(error);
+    },
   });
 }
 
