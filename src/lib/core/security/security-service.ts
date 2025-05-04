@@ -11,10 +11,8 @@ export class SecurityService {
   private constructor() {
     this.config = {
       tokenKey: "token",
-      refreshTokenKey: "refresh_token",
       encryptionKey: process.env.NEXT_PUBLIC_ENCRYPTION_KEY!,
-      tokenExpiry: 30, // 30 minutes
-      refreshTokenExpiry: 7, // 7 days
+      tokenExpiry: 30,
     };
 
     if (!this.config.encryptionKey) {
@@ -30,46 +28,35 @@ export class SecurityService {
   }
 
   // Token Management
-  setToken(token: string, isRefreshToken: boolean = false): void {
+  setToken(token: string): void {
     try {
-      const key = isRefreshToken
-        ? this.config.refreshTokenKey
-        : this.config.tokenKey;
-
-      // Store both encrypted and unencrypted versions
-      localStorage.setItem(key, token); // Unencrypted for direct access
-      localStorage.setItem(`${key}_encrypted`, this.encrypt(token)); // Encrypted for security
+      localStorage.setItem(this.config.tokenKey, token);
+      localStorage.setItem(
+        `${this.config.tokenKey}_encrypted`,
+        this.encrypt(token)
+      );
     } catch (error) {
       console.error("Error storing token:", error);
-      // Fallback to unencrypted storage
       localStorage.setItem(this.config.tokenKey, token);
     }
   }
 
-  getToken(isRefreshToken: boolean = false): string | null {
+  getToken(): string | null {
     try {
-      const key = isRefreshToken
-        ? this.config.refreshTokenKey
-        : this.config.tokenKey;
-
-      // Try getting encrypted token first
-      const encryptedToken = localStorage.getItem(`${key}_encrypted`);
-      if (encryptedToken) {
+      const encrypted = localStorage.getItem(
+        `${this.config.tokenKey}_encrypted`
+      );
+      if (encrypted) {
         try {
-          const decrypted = this.decrypt(encryptedToken);
-          if (this.validateToken(decrypted)) {
-            return decrypted;
-          }
+          const decrypted = this.decrypt(encrypted);
+          if (this.validateToken(decrypted)) return decrypted;
         } catch (e) {
           console.error("Error decrypting token:", e);
         }
       }
 
-      // Fallback to unencrypted token
-      const token = localStorage.getItem(key);
-      if (token && this.validateToken(token)) {
-        return token;
-      }
+      const token = localStorage.getItem(this.config.tokenKey);
+      if (token && this.validateToken(token)) return token;
 
       return null;
     } catch (error) {
@@ -78,17 +65,13 @@ export class SecurityService {
     }
   }
 
-  clearToken(isRefreshToken: boolean = false): void {
-    const key = isRefreshToken
-      ? this.config.refreshTokenKey
-      : this.config.tokenKey;
-    localStorage.removeItem(key);
-    localStorage.removeItem(`${key}_encrypted`);
+  clearToken(): void {
+    localStorage.removeItem(this.config.tokenKey);
+    localStorage.removeItem(`${this.config.tokenKey}_encrypted`);
   }
 
   clearAllTokens(): void {
-    this.clearToken(false);
-    this.clearToken(true);
+    this.clearToken();
   }
 
   // Token Validation
@@ -102,6 +85,15 @@ export class SecurityService {
       return Date.now() + bufferTime < decoded.exp * 1000;
     } catch {
       return false;
+    }
+  }
+
+  timeLeft(token: string): number {
+    try {
+      const { exp } = jwtDecode<{ exp: number }>(token);
+      return exp * 1000 - Date.now(); // ms until expiry
+    } catch {
+      return 0;
     }
   }
 
@@ -278,28 +270,24 @@ export class SecurityService {
     const token = this.getToken();
     if (!token) return false;
 
-    const payload = this.getTokenPayload(token);
-    if (!payload) return false;
+    // refresh when < 60 sec remain
+    if (this.timeLeft(token) > 60_000) return true;
 
-    // Refresh if token will expire in less than 5 minutes
-    const fiveMinutes = 5 * 60 * 1000;
-    const shouldRefresh = payload.exp * 1000 - Date.now() < fiveMinutes;
+    try {
+      // dynamic import here to avoid a cyclic-dependency at build time
+      const { authApi } = await import("@/lib/api/auth-api");
 
-    if (shouldRefresh) {
-      const refreshToken = this.getToken(true);
-      if (!refreshToken) return false;
-
-      try {
-        // Implement your token refresh logic here
-        // const response = await refreshTokenAPI(refreshToken);
-        // this.setToken(response.access_token);
+      const { access_token } = await authApi.refreshToken();
+      if (access_token) {
+        this.setToken(access_token);
         return true;
-      } catch {
-        return false;
       }
+      return false;
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      this.clearAllTokens();
+      return false;
     }
-
-    return true;
   }
 }
 

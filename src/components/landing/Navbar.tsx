@@ -56,7 +56,7 @@ const Navbar = forwardRef<HTMLElement>(function Navbar(_, ref) {
         {/* --- LEFT: Logo, name on desktop only --- */}
         <div className="flex items-center space-x-2 select-none">
           {/* You can use your icon here */}
-          <span className="text-2xl md:inline font-extrabold bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 bg-clip-text text-transparent tracking-tight">
+          <span className="text-2xl md:inline font-extrabold bg-gradient-to-r dark:text-white text-blue-500 bg-clip-text text-transparent tracking-tight">
             {/* Place your logo HERE, e.g. <LogoIcon className="h-7 w-7 ..." /> */}
             <span className="mr-2">
               {" "}
@@ -124,7 +124,6 @@ const Navbar = forwardRef<HTMLElement>(function Navbar(_, ref) {
             className="border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 px-4 py-1.5 transition"
             onClick={logout}
             type="button"
-            variant="outline"
           >
             Logout
           </Button>
@@ -256,7 +255,6 @@ const Navbar = forwardRef<HTMLElement>(function Navbar(_, ref) {
                       setMenuOpen(false);
                     }}
                     type="button"
-                    variant="outline"
                   >
                     Logout
                   </Button>

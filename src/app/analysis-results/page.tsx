@@ -284,12 +284,6 @@ const JobMatchCard = ({
         // Update store with results
         useAdvanceAnalysisStore.getState().setResult(analysisResult);
       }
-
-      // Store the result in localStorage or a global store
-      // localStorage.setItem("analysisResult", JSON.stringify(analysisResult));
-
-      // // Redirect to the analysis page
-      // router.push("/advance-analysis");
     } catch (error) {
       console.error("Analysis failed:", error);
       toast.error("Failed to perform advanced analysis");

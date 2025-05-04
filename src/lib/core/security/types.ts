@@ -1,9 +1,7 @@
 export interface SecurityConfig {
   tokenKey: string;
-  refreshTokenKey: string;
   encryptionKey: string;
   tokenExpiry: number; // in minutes
-  refreshTokenExpiry: number; // in days
 }
 
 export interface TokenPayload {

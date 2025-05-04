@@ -73,10 +73,7 @@ export default {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
         },
-        // primary: {
-        //   DEFAULT: "hsl(var(--primary))",
-        //   foreground: "hsl(var(--primary-foreground))",
-        // },
+
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
@@ -103,25 +100,8 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
-        quantum: {
-          primary: "#4f46e5",
-          secondary: "#3c3ac2",
-          accent: "#2a2a9f",
-          glow: "#6366f1",
-          field: "rgba(99, 102, 241, 0.1)",
-        },
       },
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "quantum-grid": `
-          linear-gradient(to right, rgba(99, 102, 241, 0.1) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(99, 102, 241, 0.1) 1px, transparent 1px)
-        `,
-        "quantum-radial":
-          "radial-gradient(circle at center, var(--quantum-primary) 0%, transparent 70%)",
-        "quantum-flow":
-          "repeating-linear-gradient(45deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.1) 1px, transparent 1px, transparent 60px)",
-      },
+
       fontFamily: {
         space: ["Space Grotesk", "sans-serif"],
         inter: ["Inter", "sans-serif"],
@@ -131,20 +111,6 @@ export default {
           "`0px 2px 3px -1px rgba(0,0,0,0.1), 0px 1px 0px 0px rgba(25,28,33,0.02), 0px 0px 0px 1px rgba(25,28,33,0.08)`",
       },
 
-      animation: {
-        "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        " ": "float 6s ease-in-out infinite",
-
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "quantum-pulse":
-          "quantum-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "quantum-float": "quantum-float 3s ease-in-out infinite",
-        "quantum-spin": "quantum-spin 4s linear infinite",
-        "quantum-shimmer": "quantum-shimmer 3s ease-in-out infinite",
-        "quantum-ripple": "quantum-ripple 3s infinite",
-        "text-gradient": "text-gradient-animation 3s ease infinite",
-      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

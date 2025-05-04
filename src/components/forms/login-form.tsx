@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/auth/use-auth";
-import { useEffect } from "react";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -18,7 +17,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  const { login, isLoading, isAuthenticated } = useAuth();
+  const { login, isLoading } = useAuth(); // no need to subscribe to the whole state
 
   const {
     register,
@@ -28,24 +27,31 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      const { isAdmin } = useAuth.getState();
-      router.push(isAdmin ? "/dashboard" : "/landing-page");
-    }
-  }, [isAuthenticated, router]);
-
+  /* ---------------------------------------------------------- */
+  /* handlers                                                   */
+  /* ---------------------------------------------------------- */
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data.email, data.password);
-      // The useEffect will handle the redirect when isAuthenticated changes
+      /* try to authenticate; store.login() already returns a boolean */
+      const ok = await login(data.email, data.password);
+
+      if (ok) {
+        /* get the fresh user snapshot from the store */
+        const { user } = useAuth.getState();
+        router.replace(user?.is_admin ? "/dashboard" : "/landing-page");
+      }
     } catch (error) {
+      /* login() already shows a toast via handleAuthError, but log anyway */
       console.error("Login error:", error);
     }
   };
 
+  /* ---------------------------------------------------------- */
+  /* UI                                                         */
+  /* ---------------------------------------------------------- */
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      {/* Email ------------------------------------------------ */}
       <div className="space-y-2">
         <Input
           {...register("email")}
@@ -59,6 +65,7 @@ export function LoginForm() {
         )}
       </div>
 
+      {/* Password -------------------------------------------- */}
       <div className="space-y-2">
         <Input
           {...register("password")}
@@ -72,6 +79,7 @@ export function LoginForm() {
         )}
       </div>
 
+      {/* Submit button --------------------------------------- */}
       <Button
         type="submit"
         className="w-full bg-gray-800 dark:bg-black dark:text-white hover:bg-gray-700 dark:hover:bg-gray-900 transition-all"

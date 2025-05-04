@@ -2,18 +2,26 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { authApi } from "@/lib/api/auth-api";
 import { toast } from "sonner";
-import Cookies from "js-cookie";
 import { ApiError, User } from "@/types";
 import { security } from "@/lib/core/security/security-service";
 
+/**
+ * The Zustand auth store
+ * ------------------------------------------------------------------
+ * - Access‐token is stored (encrypted) in localStorage via SecurityService
+ * - Refresh‐token lives in a secure http-only cookie => JS cannot touch it
+ * - No js-cookie dependency any more
+ */
 interface AuthState {
+  /* ------------- state ------------- */
   user: User | null;
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   isInitialized: boolean;
   isAdmin: boolean;
-  updateProfile: (data: Partial<User>) => Promise<void>;
+
+  /* ------------- actions ------------- */
   initialize: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   registerAdmin: (
@@ -24,11 +32,15 @@ interface AuthState {
   ) => Promise<boolean>;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateProfile: (data: Partial<User>) => Promise<void>;
 }
 
 export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
+      /* ------------------------------------------------------- */
+      /* state                                                  */
+      /* ------------------------------------------------------- */
       user: null,
       token: null,
       isLoading: false,
@@ -36,16 +48,24 @@ export const useAuth = create<AuthState>()(
       isInitialized: false,
       isAdmin: false,
 
+      /* ------------------------------------------------------- */
+      /* actions                                                */
+      /* ------------------------------------------------------- */
+
+      /**
+       * Runs once on app start.
+       * 1. Restores access-token from SecurityService
+       * 2. Fetches current user from the API
+       * 3. Tries to refresh the token if it is about to expire
+       */
       initialize: async () => {
-        const token =
-          security.getToken() ||
-          localStorage.getItem("token") ||
-          Cookies.get("token");
+        const token = security.getToken();
 
         if (token) {
           try {
             authApi.setAuthToken(token);
             const user = await authApi.getProfile();
+
             set({
               token,
               user,
@@ -53,6 +73,9 @@ export const useAuth = create<AuthState>()(
               isInitialized: true,
               isAdmin: user.is_admin,
             });
+
+            // Make sure the token is fresh right after boot
+            await security.refreshTokenIfNeeded();
           } catch (error) {
             console.error("Failed to initialize auth:", error);
             set({ isInitialized: true });
@@ -63,53 +86,42 @@ export const useAuth = create<AuthState>()(
         }
       },
 
-      // register: async (name, email, password) => {
-      //   try {
-      //     set({ isLoading: true });
-      //     const response = await authApi.register({ name, email, password });
-      //     if (response.id) {
-      //       toast.success("Registration successful! Please login.");
-      //       return true;
-      //     }
-      //     return false;
-      //   } catch (error) {
-      //     handleAuthError(error);
-      //     return false;
-      //   } finally {
-      //     set({ isLoading: false });
-      //   }
-      // },
-
+      /**
+       * Register a regular user and log in immediately afterwards.
+       */
       register: async (name, email, password) => {
         try {
           set({ isLoading: true });
-          const response = await authApi.register({ name, email, password });
-          if (response.id) {
-            // Automatically log in the user after registration
-            const loginResponse = await authApi.login({ email, password });
 
-            if (loginResponse.access_token) {
-              const token = loginResponse.access_token;
-              const user = loginResponse.user;
+          const { id } = await authApi.register({ name, email, password });
+          if (!id) return false;
 
-              // Use security service to store token
-              security.setToken(token);
+          const { access_token, user } = await authApi.login({
+            email,
+            password,
+          });
 
-              Cookies.set("token", token, { expires: 7 });
-              authApi.setAuthToken(token);
+          if (access_token) {
+            security.setToken(access_token);
+            authApi.setAuthToken(access_token);
 
-              set({
-                token,
-                user,
-                isAuthenticated: true,
-                isInitialized: true,
-                isAdmin: user.is_admin,
-              });
+            // helper cookie visible to middleware
+            document.cookie =
+              "access_token=" +
+              access_token +
+              "; Path=/; SameSite=Strict; Secure";
+            set({
+              token: access_token,
+              user,
+              isAuthenticated: true,
+              isInitialized: true,
+              isAdmin: user.is_admin,
+            });
 
-              toast.success("Registration successful!");
-              return true;
-            }
+            toast.success("Registration successful!");
+            return true;
           }
+
           return false;
         } catch (error) {
           handleAuthError(error);
@@ -118,17 +130,22 @@ export const useAuth = create<AuthState>()(
           set({ isLoading: false });
         }
       },
+
+      /**
+       * Register an admin (no auto-login for security reasons).
+       */
       registerAdmin: async (name, email, password, adminSecretKey) => {
         try {
           set({ isLoading: true });
-          const response = await authApi.registerAdmin({
+
+          const { id } = await authApi.registerAdmin({
             name,
             email,
             password,
             admin_secret_key: adminSecretKey,
           });
 
-          if (response.id) {
+          if (id) {
             toast.success("Admin registration successful! Please login.");
             return true;
           }
@@ -140,23 +157,29 @@ export const useAuth = create<AuthState>()(
           set({ isLoading: false });
         }
       },
+
+      /**
+       * Log in and store the access-token.
+       */
       login: async (email, password) => {
         try {
           set({ isLoading: true });
-          const response = await authApi.login({ email, password });
 
-          if (response.access_token) {
-            const token = response.access_token;
-            const user = response.user;
+          const { access_token, user } = await authApi.login({
+            email,
+            password,
+          });
 
-            // Use security service to store token
-            security.setToken(token); // Changed this line
-
-            Cookies.set("token", token, { expires: 7 });
-            authApi.setAuthToken(token);
-
+          if (access_token) {
+            security.setToken(access_token);
+            authApi.setAuthToken(access_token);
+            // helper cookie visible to middleware
+            document.cookie =
+              "access_token=" +
+              access_token +
+              "; Path=/; SameSite=Strict; Secure";
             set({
-              token,
+              token: access_token,
               user,
               isAuthenticated: true,
               isInitialized: true,
@@ -175,10 +198,17 @@ export const useAuth = create<AuthState>()(
         }
       },
 
+      /**
+       * Clears stored token and redirects to the login page.
+       */
       logout: () => {
         security.clearAllTokens();
-        Cookies.remove("token");
         authApi.setAuthToken(null);
+
+        /* delete helper cookie ---------------------------------------------------- */
+        document.cookie =
+          "access_token=; Path=/; Max-Age=0; SameSite=Strict; Secure";
+        /* -------------------------------------------------------------------------- */
         set({
           token: null,
           user: null,
@@ -188,6 +218,9 @@ export const useAuth = create<AuthState>()(
         window.location.href = "/login";
       },
 
+      /**
+       * Update user profile (name / email etc.).
+       */
       updateProfile: async (data) => {
         try {
           set({ isLoading: true });
@@ -204,14 +237,17 @@ export const useAuth = create<AuthState>()(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      skipHydration: true,
+      skipHydration: true, // hydration done manually in initialize()
     }
   )
 );
 
-// Helper function to handle auth errors
+/* -----------------------------------------------------------
+   Helper: display API errors in a toast
+----------------------------------------------------------- */
 const handleAuthError = (error: unknown) => {
   console.error("Auth error:", error);
+
   if ((error as ApiError).response?.data?.detail) {
     toast.error((error as ApiError).response!.data!.detail);
   } else if ((error as ApiError).message) {

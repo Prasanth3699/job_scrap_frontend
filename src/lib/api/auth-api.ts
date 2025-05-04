@@ -27,6 +27,11 @@ export const authApi = {
     }
   },
 
+  refreshToken: async (): Promise<ApiResponse<{ access_token: string }>> => {
+    // no body required – cookie is sent automatically
+    return await api.post("/auth/refresh");
+  },
+
   login: async (credentials: {
     email: string;
     password: string;
