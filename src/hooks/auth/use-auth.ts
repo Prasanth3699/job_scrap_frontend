@@ -201,20 +201,31 @@ export const useAuth = create<AuthState>()(
       /**
        * Clears stored token and redirects to the login page.
        */
-      logout: () => {
+      logout: async () => {
+        /* ask server to delete http-only cookie ------------------- */
+        try {
+          await authApi.postLogout();
+        } catch (_) {
+          /* ignore network errors – still remove local data */
+        }
+
+        /* clear local / session storage ---------------------------- */
         security.clearAllTokens();
         authApi.setAuthToken(null);
 
-        /* delete helper cookie ---------------------------------------------------- */
+        /* remove helper cookie that middleware reads ---------------- */
         document.cookie =
           "access_token=; Path=/; Max-Age=0; SameSite=Strict; Secure";
-        /* -------------------------------------------------------------------------- */
+
+        /* reset Zustand state -------------------------------------- */
         set({
           token: null,
           user: null,
           isAuthenticated: false,
           isAdmin: false,
         });
+
+        /* redirect AFTER cookies are gone -------------------------- */
         window.location.href = "/login";
       },
 

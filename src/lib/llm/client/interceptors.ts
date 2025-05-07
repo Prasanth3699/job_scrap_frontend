@@ -27,7 +27,7 @@ type TrackableAxiosResponse<T = unknown, D = unknown> = AxiosResponse<T, D> & {
 /*  Interceptor setup                                                 */
 /* ------------------------------------------------------------------ */
 export const setupLLMInterceptors = (api: AxiosInstance): void => {
-  /* ────────────────  REQUEST  ──────────────── */
+  /* ───────────────────────  REQUEST  ────────────────────────────── */
   api.interceptors.request.use(
     (config: TrackableRequestConfig) => {
       /* ---- security checks -------------------------------------------------- */
@@ -39,11 +39,11 @@ export const setupLLMInterceptors = (api: AxiosInstance): void => {
         return Promise.reject(new Error("Token is invalid or expired"));
       }
 
-      /* ---- inject auth + security headers ----------------------------------- */
+      /* ---- inject auth + security headers --------------------------------- */
       config.headers.Authorization = `Bearer ${token}`;
       Object.assign(config.headers, security.getSecurityHeaders());
 
-      /* ---- start performance timer ------------------------------------------ */
+      /* ---- start performance timer ---------------------------------------- */
       config.endTracking = monitoring.startPerformanceTracking(
         `LLM_${config.method?.toUpperCase()} ${config.url}`
       );
@@ -59,7 +59,7 @@ export const setupLLMInterceptors = (api: AxiosInstance): void => {
     }
   );
 
-  /* ────────────────  RESPONSE  ─────────────── */
+  /* ───────────────────────  RESPONSE  ───────────────────────────── */
   api.interceptors.response.use(
     (response: TrackableAxiosResponse) => {
       /* ---- stop performance timer ------------------------------------------- */
@@ -80,7 +80,7 @@ export const setupLLMInterceptors = (api: AxiosInstance): void => {
     (err: AxiosError) => {
       /* ---- stop timer if it was started ------------------------------------- */
       const cfg = err.config as TrackableRequestConfig | undefined;
-      cfg?.endTracking?.();
+      cfg?.endTracking?.(); // stop timer if running
 
       /* ---- error event ------------------------------------------------------ */
       monitoring.trackError({

@@ -53,6 +53,10 @@ export const authApi = {
     return await api.post("/auth/register", userData);
   },
 
+  postLogout: async () => {
+    return await api.post("/auth/logout");
+  },
+
   getProfile: async (): Promise<ApiResponse<User>> => {
     return await api.get("/auth/me");
   },
