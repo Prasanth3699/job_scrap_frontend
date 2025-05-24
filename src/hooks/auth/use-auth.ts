@@ -171,13 +171,17 @@ export const useAuth = create<AuthState>()(
           });
 
           if (access_token) {
+            // Store token in security service
             security.setToken(access_token);
+
+            // Set the token in auth API
             authApi.setAuthToken(access_token);
-            // helper cookie visible to middleware
-            document.cookie =
-              "access_token=" +
-              access_token +
-              "; Path=/; SameSite=Strict; Secure";
+
+            // Store a helper cookie for middleware
+            document.cookie = `access_token=${access_token}; Path=/; SameSite=Strict; Secure; Max-Age=${
+              60 * 15
+            }`; // 15 minutes
+
             set({
               token: access_token,
               user,
@@ -202,22 +206,21 @@ export const useAuth = create<AuthState>()(
        * Clears stored token and redirects to the login page.
        */
       logout: async () => {
-        /* ask server to delete http-only cookie ------------------- */
         try {
           await authApi.postLogout();
         } catch (_) {
           /* ignore network errors – still remove local data */
         }
 
-        /* clear local / session storage ---------------------------- */
+        /* clear local / session storage */
         security.clearAllTokens();
         authApi.setAuthToken(null);
 
-        /* remove helper cookie that middleware reads ---------------- */
+        /* remove helper cookie that middleware reads */
         document.cookie =
           "access_token=; Path=/; Max-Age=0; SameSite=Strict; Secure";
 
-        /* reset Zustand state -------------------------------------- */
+        /* reset Zustand state */
         set({
           token: null,
           user: null,
@@ -225,10 +228,9 @@ export const useAuth = create<AuthState>()(
           isAdmin: false,
         });
 
-        /* redirect AFTER cookies are gone -------------------------- */
+        /* redirect AFTER cookies are gone */
         window.location.href = "/login";
       },
-
       /**
        * Update user profile (name / email etc.).
        */

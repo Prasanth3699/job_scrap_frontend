@@ -36,7 +36,16 @@ export const authApi = {
     email: string;
     password: string;
   }): Promise<ApiResponse<{ access_token: string; user: User }>> => {
-    return await api.post("/auth/login", credentials);
+    const response = await api.post("/auth/login", credentials);
+
+    // Set the auth token in axios instance
+    if (response.access_token) {
+      api.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${response.access_token}`;
+    }
+
+    return response;
   },
 
   registerAdmin: async (

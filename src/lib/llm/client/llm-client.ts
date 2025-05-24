@@ -19,7 +19,7 @@ class LLMApiClient {
 
     this.api = axios.create({
       baseURL,
-      timeout: 90000,
+      timeout: 900000,
       headers: { "Content-Type": "application/json" },
     });
 
