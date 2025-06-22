@@ -1,6 +1,6 @@
 // hooks/ml/analytics/use-skill-demand.ts
 import { useQuery } from "@tanstack/react-query";
-import { mlAnalyticsClient } from "@/lib/ml/analytics/client";
+import { mlAnalyticsService } from "@/lib/api";
 import { monitoring } from "@/lib/core/monitoring";
 
 export function useSkillDemand(days: number = 90) {
@@ -8,7 +8,7 @@ export function useSkillDemand(days: number = 90) {
     queryKey: ["ml-analytics", "skill-demand", days],
     queryFn: async () => {
       try {
-        const response = await mlAnalyticsClient.getSkillDemand(days);
+        const response = await mlAnalyticsService.getSkillDemand(days);
         return response.data;
       } catch (error) {
         monitoring.trackError({

@@ -1,6 +1,6 @@
 // hooks/ml/analytics/use-user-engagement.ts
 import { useQuery } from "@tanstack/react-query";
-import { mlAnalyticsClient } from "@/lib/ml/analytics/client";
+import { mlAnalyticsService } from "@/lib/api";
 import { security } from "@/lib/core/security/security-service";
 import { monitoring } from "@/lib/core/monitoring";
 
@@ -21,7 +21,7 @@ export function useUserEngagement(days: number = 30) {
           throw new Error("Session expired. Please log in again.");
         }
 
-        const response = await mlAnalyticsClient.getUserEngagement(days);
+        const response = await mlAnalyticsService.getUserEngagement(days);
 
         // Validate response structure
         if (!response || typeof response !== "object") {

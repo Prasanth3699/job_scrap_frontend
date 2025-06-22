@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SkillGap } from "@/lib/llm/client/types";
+import { SkillGap } from "@/types/index";
 import clsx from "clsx";
 import {
   BookOpen,

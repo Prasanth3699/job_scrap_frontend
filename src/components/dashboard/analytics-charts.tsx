@@ -18,14 +18,14 @@ import {
 import { DashboardStats, ScrapingHistory } from "@/types";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
-import { statsApi } from "@/lib/api/stats-api";
+import { statsService } from "@/lib/api";
 
 const COLORS = ["#ff6384", "#36a2eb", "#ffce56", "#4bc0c0", "#9966ff"];
 
 export function AnalyticsCharts({ data }: { data: DashboardStats }) {
   const { data: history } = useQuery<ScrapingHistory>({
     queryKey: ["scraping-history"],
-    queryFn: statsApi.getScrapingHistory,
+    queryFn: statsService.getScrapingHistory,
     refetchInterval: 30000,
   });
 

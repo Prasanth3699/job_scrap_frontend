@@ -1,7 +1,7 @@
 // hooks/use-resume-analysis.ts
 
 import { useMutation } from "@tanstack/react-query";
-import { mlClient } from "@/lib/ml/client/ml-client";
+import { mlService } from "@/lib/api";
 import { MatchResponse } from "@/stores/analysis-schema";
 import { monitoring } from "@/lib/core/monitoring";
 import { toast } from "sonner";
@@ -16,7 +16,7 @@ export function useResumeAnalysis() {
   const analysisMutation = useMutation<MatchResponse, Error, AnalysisInput>({
     mutationFn: async ({ resume, jobIds }) => {
       try {
-        const response = await mlClient.analyzeResume(resume, jobIds);
+        const response = await mlService.analyzeResume(resume, jobIds);
         return response;
       } catch (error) {
         // Handle specific error types

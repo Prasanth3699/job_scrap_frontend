@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { profileApi } from "@/lib/api/profile-api";
+import { profileService } from "@/lib/api";
 import { toast } from "sonner";
 import { UserProfile } from "@/types";
 
@@ -27,7 +27,9 @@ export const useProfile = create<ProfileState>()(
       createProfile: async (profileData) => {
         try {
           set({ isLoading: true });
-          const updatedProfile = await profileApi.createProfile(profileData);
+          const updatedProfile = await profileService.createProfile(
+            profileData
+          );
 
           set({
             profile: updatedProfile,
@@ -48,7 +50,7 @@ export const useProfile = create<ProfileState>()(
       uploadResume: async (file) => {
         try {
           set({ isLoading: true });
-          const response = await profileApi.uploadResume(file);
+          const response = await profileService.uploadResume(file);
 
           // Refetch profile to update resume status
           await get().fetchProfile();
@@ -66,7 +68,7 @@ export const useProfile = create<ProfileState>()(
       fetchProfile: async () => {
         try {
           set({ isLoading: true });
-          const profile = await profileApi.getProfile();
+          const profile = await profileService.getProfile();
 
           set({
             profile,
@@ -88,7 +90,9 @@ export const useProfile = create<ProfileState>()(
       updateProfile: async (profileData) => {
         try {
           set({ isLoading: true });
-          const updatedProfile = await profileApi.updateProfile(profileData);
+          const updatedProfile = await profileService.updateProfile(
+            profileData
+          );
 
           set({
             profile: updatedProfile,

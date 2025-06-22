@@ -1,5 +1,5 @@
 "use client";
-import { Keywords } from "@/lib/llm/client/types";
+import { Keywords } from "@/types/index";
 import clsx from "clsx";
 import { Code, Heart, Lightbulb, Zap } from "lucide-react";
 

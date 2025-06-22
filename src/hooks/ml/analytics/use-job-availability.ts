@@ -1,6 +1,6 @@
 // hooks/ml/analytics/use-job-availability.ts
 import { useQuery } from "@tanstack/react-query";
-import { mlAnalyticsClient } from "@/lib/ml/analytics/client";
+import { mlAnalyticsService } from "@/lib/api";
 import { security } from "@/lib/core/security/security-service";
 import { monitoring } from "@/lib/core/monitoring";
 
@@ -17,7 +17,7 @@ export function useJobAvailability(days: number = 90) {
           throw new Error("Insufficient permissions");
         }
 
-        const response = await mlAnalyticsClient.getJobAvailability(days);
+        const response = await mlAnalyticsService.getJobAvailability(days);
         return response;
       } catch (error) {
         monitoring.trackError({

@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
 import { ScrapeHistory } from "@/components/dashboard/scrape-history";
-import { statsApi } from "@/lib/api/stats-api";
+import { statsService } from "@/lib/api";
 import { DashboardStats } from "@/types/index";
 import { ShinyButton } from "@/components/magicui/shiny-button";
 import { Cover } from "@/components/ui/cover";
@@ -16,7 +16,7 @@ export function AdminDashboard() {
 
   const { data: dashboardStats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["dashboardStats"],
-    queryFn: statsApi.getDashboardStats,
+    queryFn: statsService.getDashboardStats,
     refetchInterval: 30000,
     initialData: {
       stats: {

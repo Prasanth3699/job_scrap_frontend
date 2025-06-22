@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsApi, JobsQueryParams } from "@/lib/api/jobs-api";
+import { jobsService, JobsQueryParams } from "@/lib/api";
 import { toast } from "sonner";
 interface JobFilters {
   page?: number;
@@ -50,13 +50,13 @@ export function useJobs(filters?: JobFilters) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["jobs", filters],
     queryFn: async (): Promise<JobsResponse> => {
-      const response = await jobsApi.getJobs(mapToQueryParams(filters));
+      const response = await jobsService.getJobs(mapToQueryParams(filters));
       return response.data;
     },
   });
 
   const triggerScrapeMutation = useMutation({
-    mutationFn: jobsApi.triggerScrape,
+    mutationFn: jobsService.triggerScrape,
     onSuccess: () => {
       toast.success("Scraping started successfully");
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
@@ -81,7 +81,7 @@ export function useJobs(filters?: JobFilters) {
 export function useJobDetails(jobId: string) {
   return useQuery({
     queryKey: ["job", jobId],
-    queryFn: () => jobsApi.getJobById(jobId), // No .data needed
+    queryFn: () => jobsService.getJobById(jobId), // No .data needed
     enabled: !!jobId,
   });
 }
@@ -90,7 +90,7 @@ export function useJobDetails(jobId: string) {
 export function useRelatedJobs(jobId: string) {
   return useQuery({
     queryKey: ["relatedJobs", jobId],
-    queryFn: () => jobsApi.getRelatedJobs(jobId),
+    queryFn: () => jobsService.getRelatedJobs(jobId),
     enabled: !!jobId,
   });
 }

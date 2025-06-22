@@ -233,6 +233,12 @@ export class SecurityService {
       "X-XSS-Protection": "1; mode=block",
     };
   }
+  getSecurityRequestHeaders(): Record<string, string> {
+    return {
+      // Only include headers appropriate for requests
+      "X-Requested-With": "XMLHttpRequest",
+    };
+  }
 
   private getCSPPolicy(): string {
     return [

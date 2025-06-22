@@ -1,6 +1,6 @@
 // src/hooks/use-job-dashboard.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobsApi } from "@/lib/api";
+import { jobsService } from "@/lib/api/";
 import { toast } from "sonner";
 
 export function useJobsForDashboard() {
@@ -8,11 +8,11 @@ export function useJobsForDashboard() {
 
   const { data: jobs, isLoading } = useQuery({
     queryKey: ["jobs"],
-    queryFn: () => jobsApi.getJobsDashboard(), // Fetch jobs for dashboard
+    queryFn: () => jobsService.getJobsDashboard(), // Fetch jobs for dashboard
   });
 
   const triggerScrapeMutation = useMutation({
-    mutationFn: jobsApi.triggerScrape,
+    mutationFn: jobsService.triggerScrape,
 
     onSuccess: () => {
       toast.success("Scraping started successfully");

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { settingsApi } from "@/lib/api/settings-api";
+import { settingsService } from "@/lib/api";
 import { toast } from "sonner";
 import type { EmailConfig, SchedulerConfig } from "@/types";
 import type { ApiError, Settings } from "@/types";
@@ -10,7 +10,7 @@ export function useSettings() {
   const { data: settings, isLoading } = useQuery<Settings>({
     queryKey: ["settings"],
     queryFn: async () => {
-      const response = await settingsApi.getSettings();
+      const response = await settingsService.getSettings();
       // Type assertion after checking the structure
       if (
         response &&
@@ -25,7 +25,7 @@ export function useSettings() {
 
   const updateEmailMutation = useMutation<void, ApiError, EmailConfig>({
     mutationFn: async (data: EmailConfig) => {
-      await settingsApi.updateEmailConfig(data);
+      await settingsService.updateEmailConfig(data);
       // Return void explicitly
       return;
     },
@@ -42,7 +42,7 @@ export function useSettings() {
 
   const updateCronMutation = useMutation<void, ApiError, SchedulerConfig>({
     mutationFn: async (data: SchedulerConfig) => {
-      await settingsApi.updateCronConfig(data);
+      await settingsService.updateCronConfig(data);
       // Return void explicitly
       return;
     },

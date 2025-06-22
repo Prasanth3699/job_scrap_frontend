@@ -1,4 +1,4 @@
-import { ATSAnalysis } from "@/lib/llm/client/types";
+import { ATSAnalysis } from "@/types/index";
 import ScoreGauge from "./ScoreGauge";
 import clsx from "clsx";
 import { AlertTriangle, Box, CheckCircle2, XCircle } from "lucide-react";

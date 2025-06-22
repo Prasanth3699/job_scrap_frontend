@@ -7,7 +7,7 @@ import {
   Award,
   Briefcase,
 } from "lucide-react";
-import { ImprovementPlan } from "@/lib/llm/client/types";
+import { ImprovementPlan } from "@/types/index";
 import clsx from "clsx";
 
 interface Props {
