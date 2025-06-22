@@ -2,7 +2,7 @@ import { mlApi } from "../gateway";
 import { ML_ENDPOINTS } from "../endpoints";
 import { monitoring } from "@/lib/core/monitoring";
 import { Job } from "@/types";
-import { MLProcessingResult } from "@/lib/ml/client/types";
+import { MLProcessingResult } from "@/types";
 import { MatchResponse, MatchResponseSchema } from "@/stores/analysis-schema";
 
 /**

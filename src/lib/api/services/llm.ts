@@ -6,7 +6,7 @@ import {
   JobAnalysisResult,
   SkillGap,
   ATSAnalysis,
-} from "@/lib/llm/client/types";
+} from "@/types";
 
 /**
  * Language Learning Model service for text-based analysis
