@@ -1,4 +1,5 @@
-import { api } from "./axios-instance";
+import { coreApi } from "../gateway";
+import { CORE_ENDPOINTS } from "../endpoints";
 import { DashboardStats, ScrapingHistory } from "@/types";
 import { isDashboardStats, isScrapingHistory } from "@/lib/utils/api-helpers";
 import {
@@ -6,10 +7,18 @@ import {
   getDefaultScrapingHistory,
 } from "@/lib/utils/api-helpers";
 
-export const statsApi = {
+/**
+ * Analytics and statistics service
+ */
+export const statsService = {
+  /**
+   * Get dashboard statistics
+   */
   getDashboardStats: async (): Promise<DashboardStats> => {
     try {
-      const response = (await api.get("/stats/dashboard-stats")) as unknown;
+      const response = (await coreApi.get(
+        CORE_ENDPOINTS.DASHBOARD_STATS
+      )) as unknown;
 
       if (isDashboardStats(response)) {
         return response;
@@ -22,9 +31,14 @@ export const statsApi = {
     }
   },
 
+  /**
+   * Get scraping history data
+   */
   getScrapingHistory: async (): Promise<ScrapingHistory> => {
     try {
-      const response = (await api.get("/stats/scraping-history")) as unknown;
+      const response = (await coreApi.get(
+        CORE_ENDPOINTS.SCRAPING_HISTORY
+      )) as unknown;
 
       if (isScrapingHistory(response)) {
         return response;

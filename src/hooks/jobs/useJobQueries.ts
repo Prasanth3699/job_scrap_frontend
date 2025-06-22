@@ -1,5 +1,5 @@
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { jobsApi } from "@/lib/api/jobs-api";
+import { jobsService } from "@/lib/api";
 import { JobFilters } from "@/types";
 
 export function useJobQueries(filters?: JobFilters) {
@@ -8,7 +8,7 @@ export function useJobQueries(filters?: JobFilters) {
     queryKey: ["jobs", filters],
     initialPageParam: 1,
     queryFn: async ({ pageParam }) => {
-      return await jobsApi.getJobs({
+      return await jobsService.getJobs({
         page: pageParam as number,
         ...filters,
       });
@@ -21,7 +21,7 @@ export function useJobQueries(filters?: JobFilters) {
   const useJobDetails = (jobId: string) => {
     return useQuery({
       queryKey: ["job", jobId],
-      queryFn: () => jobsApi.getJobById(jobId),
+      queryFn: () => jobsService.getJobById(jobId),
       enabled: !!jobId,
     });
   };
@@ -30,7 +30,7 @@ export function useJobQueries(filters?: JobFilters) {
   const useRelatedJobs = (jobId: string) => {
     return useQuery({
       queryKey: ["relatedJobs", jobId],
-      queryFn: () => jobsApi.getRelatedJobs(jobId),
+      queryFn: () => jobsService.getRelatedJobs(jobId),
       enabled: !!jobId,
     });
   };

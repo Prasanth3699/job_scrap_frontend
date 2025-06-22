@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { mlAnalyticsClient } from "@/lib/ml/analytics/client";
+import { mlAnalyticsService } from "@/lib/api";
 import { security } from "@/lib/core/security/security-service";
 import { monitoring } from "@/lib/core/monitoring";
 import { useParams } from "next/navigation";
@@ -25,7 +25,7 @@ export function useUserPreferences() {
           throw new Error("Invalid user ID");
         }
 
-        const response = await mlAnalyticsClient.getUserPreferences(userId);
+        const response = await mlAnalyticsService.getUserPreferences(userId);
 
         // Validate response structure
         if (!response || typeof response !== "object") {

@@ -2,7 +2,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 
-import { llmClient } from "@/lib/llm/client/llm-client";
+import { llmService } from "@/lib/api";
 import {
   ResumeJobRequest,
   SkillGap,
@@ -50,7 +50,7 @@ export function useLLMComprehensiveAnalysis() {
   return useMutation<AnalysisResult, APIError, ResumeJobRequest>({
     mutationFn: async (payload) => {
       requireAuth();
-      const result = await llmClient.analyze(payload);
+      const result = await llmService.analyze(payload);
       return result;
     },
     onMutate: () => {
@@ -74,7 +74,7 @@ export function useLLMSkillGaps() {
   return useMutation<SkillGap[], APIError, ResumeJobRequest>({
     mutationFn: async (payload) => {
       requireAuth();
-      return llmClient.skillGaps(payload);
+      return llmService.skillGaps(payload);
     },
     onSuccess: () => toast.success("Skill-gap analysis completed"),
     onError: buildErrorHandler("LLM skill gaps failed"),
@@ -88,7 +88,7 @@ export function useLLMATSScore() {
   return useMutation<ATSAnalysis, APIError, ResumeJobRequest>({
     mutationFn: async (payload) => {
       requireAuth();
-      return llmClient.atsScore(payload);
+      return llmService.atsScore(payload);
     },
     onSuccess: () => toast.success("ATS evaluation completed"),
     onError: buildErrorHandler("LLM ATS evaluation failed"),
@@ -102,7 +102,7 @@ export function useLLMExtractKeywords() {
   return useMutation<Record<string, string[]>, APIError, ResumeJobRequest>({
     mutationFn: async (payload) => {
       requireAuth();
-      return llmClient.extractKeywords(payload);
+      return llmService.extractKeywords(payload);
     },
     onSuccess: () => toast.success("Keyword extraction completed"),
     onError: buildErrorHandler("LLM extract keywords failed"),

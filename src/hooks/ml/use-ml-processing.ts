@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { mlClient } from "@/lib/ml/client/ml-client";
+import { mlService } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/auth/use-auth";
 import { security } from "@/lib/core/security/security-service";
@@ -16,7 +16,7 @@ export function useMLProcessing() {
         throw new Error("Authentication required");
       }
 
-      const response = await mlClient.processJobs(jobIds);
+      const response = await mlService.processJobs(jobIds);
       return response;
     },
     onMutate: () => {

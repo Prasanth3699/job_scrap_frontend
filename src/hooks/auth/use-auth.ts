@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { authApi } from "@/lib/api/auth-api";
+import { authService } from "@/lib/api/";
 import { toast } from "sonner";
 import { ApiError, User } from "@/types";
 import { security } from "@/lib/core/security/security-service";
@@ -63,8 +63,8 @@ export const useAuth = create<AuthState>()(
 
         if (token) {
           try {
-            authApi.setAuthToken(token);
-            const user = await authApi.getProfile();
+            authService.setAuthToken(token);
+            const user = await authService.getProfile();
 
             set({
               token,
@@ -93,17 +93,17 @@ export const useAuth = create<AuthState>()(
         try {
           set({ isLoading: true });
 
-          const { id } = await authApi.register({ name, email, password });
+          const { id } = await authService.register({ name, email, password });
           if (!id) return false;
 
-          const { access_token, user } = await authApi.login({
+          const { access_token, user } = await authService.login({
             email,
             password,
           });
 
           if (access_token) {
             security.setToken(access_token);
-            authApi.setAuthToken(access_token);
+            authService.setAuthToken(access_token);
 
             // helper cookie visible to middleware
             document.cookie =
@@ -138,7 +138,7 @@ export const useAuth = create<AuthState>()(
         try {
           set({ isLoading: true });
 
-          const { id } = await authApi.registerAdmin({
+          const { id } = await authService.registerAdmin({
             name,
             email,
             password,
@@ -165,7 +165,7 @@ export const useAuth = create<AuthState>()(
         try {
           set({ isLoading: true });
 
-          const { access_token, user } = await authApi.login({
+          const { access_token, user } = await authService.login({
             email,
             password,
           });
@@ -175,7 +175,7 @@ export const useAuth = create<AuthState>()(
             security.setToken(access_token);
 
             // Set the token in auth API
-            authApi.setAuthToken(access_token);
+            authService.setAuthToken(access_token);
 
             // Store a helper cookie for middleware
             document.cookie = `access_token=${access_token}; Path=/; SameSite=Strict; Secure; Max-Age=${
@@ -207,14 +207,14 @@ export const useAuth = create<AuthState>()(
        */
       logout: async () => {
         try {
-          await authApi.postLogout();
+          await authService.postLogout();
         } catch (_) {
           /* ignore network errors – still remove local data */
         }
 
         /* clear local / session storage */
         security.clearAllTokens();
-        authApi.setAuthToken(null);
+        authService.setAuthToken(null);
 
         /* remove helper cookie that middleware reads */
         document.cookie =
@@ -237,7 +237,7 @@ export const useAuth = create<AuthState>()(
       updateProfile: async (data) => {
         try {
           set({ isLoading: true });
-          const updatedUser = await authApi.updateProfile(data);
+          const updatedUser = await authService.updateProfile(data);
           set({ user: updatedUser });
           toast.success("Profile updated successfully!");
         } catch (error) {

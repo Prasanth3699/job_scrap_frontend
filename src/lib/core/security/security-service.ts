@@ -233,6 +233,12 @@ export class SecurityService {
       "X-XSS-Protection": "1; mode=block",
     };
   }
+  getSecurityRequestHeaders(): Record<string, string> {
+    return {
+      // Only include headers appropriate for requests
+      "X-Requested-With": "XMLHttpRequest",
+    };
+  }
 
   private getCSPPolicy(): string {
     return [
@@ -275,9 +281,9 @@ export class SecurityService {
 
     try {
       // dynamic import here to avoid a cyclic-dependency at build time
-      const { authApi } = await import("@/lib/api/auth-api");
+      const { authService } = await import("@/lib/api/services/auth");
 
-      const { access_token } = await authApi.refreshToken();
+      const { access_token } = await authService.refreshToken();
       if (access_token) {
         this.setToken(access_token);
         return true;

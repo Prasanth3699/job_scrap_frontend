@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { jobSourceApi } from "@/lib/api/job-source-api";
+import { jobSourceService } from "@/lib/api";
 import { toast } from "sonner";
 import type {
   JobSource,
@@ -14,13 +14,13 @@ export function useJobSources() {
 
   const { data: sources = [], isLoading } = useQuery<JobSource[]>({
     queryKey: ["jobSources"],
-    queryFn: jobSourceApi.getSources,
+    queryFn: jobSourceService.getSources,
     // Add staleTime to prevent too frequent refetches
     staleTime: 10000 * 60, // 10 minute
   });
 
   const createMutation = useMutation<JobSource, ApiError, JobSourceFormData>({
-    mutationFn: jobSourceApi.createSource,
+    mutationFn: jobSourceService.createSource,
     onSuccess: () => {
       toast.success("Job source created successfully");
       queryClient.invalidateQueries({ queryKey: ["jobSources"] });
@@ -57,7 +57,7 @@ export function useJobSources() {
         {} as JobSourceUpdateData
       );
 
-      return await jobSourceApi.updateSource(id, cleanedData);
+      return await jobSourceService.updateSource(id, cleanedData);
     },
     onSuccess: () => {
       toast.success("Job source updated successfully");
@@ -72,7 +72,7 @@ export function useJobSources() {
 
   const deleteMutation = useMutation<void, ApiError, number>({
     mutationFn: async (id) => {
-      const response = await jobSourceApi.deleteSource(id);
+      const response = await jobSourceService.deleteSource(id);
       return response;
     },
     onSuccess: () => {
@@ -88,7 +88,7 @@ export function useJobSources() {
 
   const scrapeMutation = useMutation<void, ApiError, number | undefined>({
     mutationFn: async (sourceId) => {
-      const response = await jobSourceApi.triggerScrape(sourceId);
+      const response = await jobSourceService.triggerScrape(sourceId);
       return response;
     },
     onSuccess: () => {

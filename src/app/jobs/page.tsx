@@ -6,7 +6,7 @@ import { useJobStore } from "@/stores/jobStore";
 import JobFilters from "@/components/jobs/JobFilters";
 import JobList from "@/components/jobs/JobList";
 import { useInView } from "react-intersection-observer";
-import { jobsApi } from "@/lib/api/jobs-api";
+import { jobsService } from "@/lib/api/services/jobs";
 import { Filter, Sparkles } from "lucide-react";
 import Script from "next/script";
 import PublicLayout from "@/components/layout/PublicLayout";
@@ -172,7 +172,7 @@ export default function JobsPage() {
           ...(filterSet.salaryRange && { salaryRange: filterSet.salaryRange }),
         };
 
-        const response = await jobsApi.getJobs(cleanFilters);
+        const response = await jobsService.getJobs(cleanFilters);
         const responseData = response.data || response;
         const { jobs: newJobs, total } = responseData;
 

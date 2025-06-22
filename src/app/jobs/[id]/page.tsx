@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Job } from "@/types";
 import { ArrowLeft, MapPin, Clock, Briefcase, Calendar } from "lucide-react";
 import RelatedJobs from "@/components/jobs/RelatedJobs";
-import { jobsApi } from "@/lib/api/jobs-api";
+import { jobsService } from "@/lib/api/services/jobs";
 import { sanitizeHtml } from "@/lib/utils/sanitize";
 
 export default function JobDetailsPage() {
@@ -23,12 +23,14 @@ export default function JobDetailsPage() {
         setError(null);
 
         // Fetch job details using the API service
-        const jobData = await jobsApi.getJobById(params.id as string);
+        const jobData = await jobsService.getJobById(params.id as string);
         setJob(jobData);
 
         // Fetch related jobs
         try {
-          const relatedData = await jobsApi.getRelatedJobs(params.id as string);
+          const relatedData = await jobsService.getRelatedJobs(
+            params.id as string
+          );
           setRelatedJobs(relatedData || []);
         } catch (err) {
           console.error("Error fetching related jobs:", err);

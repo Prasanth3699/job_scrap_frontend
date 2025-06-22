@@ -1,4 +1,4 @@
-import { JobAnalysisResult } from "@/lib/llm/client/types";
+import { JobAnalysisResult } from "@/types/index";
 import AtsCard from "./AtsCard";
 import SkillGapsTable from "./SkillGapsTable";
 import ImprovementAccordion from "./ImprovementAccordion";

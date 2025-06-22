@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { mlAnalyticsClient } from "@/lib/ml/analytics/client";
+import { mlAnalyticsService } from "@/lib/api";
 import { security } from "@/lib/core/security/security-service";
 import { monitoring } from "@/lib/core/monitoring";
 
@@ -38,7 +38,7 @@ export function useSalaryComparison() {
         }
 
         // Use the implemented compareSalary method
-        const response = await mlAnalyticsClient.compareSalary(
+        const response = await mlAnalyticsService.compareSalary(
           currentSalary,
           jobTitle,
           location

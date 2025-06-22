@@ -1,7 +1,14 @@
-import { api } from "./axios-instance";
+import { coreApi } from "../gateway";
+import { CORE_ENDPOINTS } from "../endpoints";
 import { UserProfile } from "@/types";
 
-export const profileApi = {
+/**
+ * User profile management service
+ */
+export const profileService = {
+  /**
+   * Create or update user profile during onboarding
+   */
   createProfile: async (profileData: {
     career_stage: string;
     current_role?: string;
@@ -19,7 +26,10 @@ export const profileApi = {
           : [],
       };
 
-      const response = await api.post("/profile/onboarding", processedData);
+      const response = await coreApi.post(
+        CORE_ENDPOINTS.PROFILE_ONBOARDING,
+        processedData
+      );
       return response;
     } catch (error: any) {
       console.error("Profile creation error:", error);
@@ -48,6 +58,9 @@ export const profileApi = {
     }
   },
 
+  /**
+   * Upload a resume and extract profile data
+   */
   uploadResume: async (
     file: File
   ): Promise<{
@@ -58,9 +71,13 @@ export const profileApi = {
     formData.append("file", file);
 
     try {
-      const response = await api.post("/profile/upload-resume", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const response = await coreApi.post(
+        CORE_ENDPOINTS.UPLOAD_RESUME,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
       return response;
     } catch (error) {
       console.error("Resume upload error:", error);
@@ -68,9 +85,12 @@ export const profileApi = {
     }
   },
 
+  /**
+   * Get the current user's profile
+   */
   getProfile: async (): Promise<UserProfile> => {
     try {
-      const response = await api.get("/profile");
+      const response = await coreApi.get(CORE_ENDPOINTS.GET_PROFILE);
       return response;
     } catch (error) {
       console.error("Get profile error:", error);
