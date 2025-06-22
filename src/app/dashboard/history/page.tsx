@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { statsApi } from "@/lib/api";
+import { statsApi } from "@/lib/api/stats-api";
 import { ScrapingHistory } from "@/types";
 import { format } from "date-fns";
 import { formatDuration } from "@/lib/utils";

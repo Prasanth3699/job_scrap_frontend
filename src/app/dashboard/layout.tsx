@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 import { Navbar } from "@/components/layout/navbar";
 import {
   SidebarProvider,
@@ -16,19 +16,35 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading, isInitialized } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, isLoading, router]);
+    // Only run the redirect check when auth is fully initialized and not loading
+    if (isInitialized && !isLoading) {
+      // If not authenticated, redirect to login
+      if (!isAuthenticated) {
+        router.push("/login");
+        return;
+      }
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+      // If authenticated but not admin, redirect to landing page
+      if (!isAdmin) {
+        router.push("/landing-page");
+      }
+    }
+  }, [isAuthenticated, isAdmin, isLoading, isInitialized, router]);
+
+  // Show loading state while authentication is being initialized
+  if (isLoading || !isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
-  if (!isAuthenticated) {
+  // Don't render anything until we're sure we should show this layout
+  if (!isAuthenticated || !isAdmin) {
     return null;
   }
 
@@ -39,7 +55,7 @@ export default function DashboardLayout({
         <div className="flex flex-1">
           <DesktopSidebar />
           <MobileSidebar />
-          <main className="flex-1 md:ml-[70px] pt-16  overflow-y-auto">
+          <main className="flex-1 md:ml-[70px] pt-16 overflow-y-auto">
             {children}
           </main>
         </div>

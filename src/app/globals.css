@@ -117,12 +117,55 @@
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   }
 }
-/* ------------------------------------------------ */
 
-.gradient-text {
-  @apply bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent;
+/* Add FontAwesome */
+/* @import "@fortawesome/fontawesome-free/css/all.min.css"; */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Optional: Add smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhance text rendering */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom gradient animations */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
   background-size: 200% 200%;
-  animation: gradient 8s ease infinite;
+  animation: gradient-shift 15s ease infinite;
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #3b82f6, #8b5cf6, #3b82f6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% auto;
+  animation: gradient 15s linear infinite;
 }
 
 @keyframes gradient {
@@ -137,44 +180,21 @@
   }
 }
 
-.swiper {
-  width: 100%;
-  padding-top: 50px;
-  padding-bottom: 50px;
-}
-
-.swiper-slide {
-  background-position: center;
-  background-size: cover;
-  width: 300px;
-  height: 300px;
-}
-
-.category-card {
-  box-shadow: 0 0 20px rgba(123, 31, 162, 0.5);
-}
-
-.job-card {
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.swiper-cards {
-  overflow: visible;
-}
-
-.swiper-slide-active {
-  transform: scale(1.1);
-  transition: transform 0.3s;
-}
-
-/* Add FontAwesome */
-@import "@fortawesome/fontawesome-free/css/all.min.css";
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .scrollbar-thumb-gray-700::-webkit-scrollbar-thumb {
+    background-color: #374151;
+    border-radius: 6px;
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
   }
 }

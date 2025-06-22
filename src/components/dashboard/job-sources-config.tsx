@@ -30,7 +30,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-import { useJobSources } from "@/hooks/use-job-sources";
+import { useJobSources } from "@/hooks/jobs/use-job-sources";
 import type { JobSource, JobSourceUpdateData, ScrapingConfig } from "@/types";
 
 // Define the schema

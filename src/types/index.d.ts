@@ -3,18 +3,64 @@ export interface User {
   name: string;
   email: string;
   accessToken?: string;
+  is_admin: boolean;
+  is_active: boolean;
 }
 
-interface Job {
+export interface AdminUser extends User {
+  is_admin: true;
+}
+
+export interface AdminRegistrationData {
+  name: string;
+  email: string;
+  password: string;
+  admin_secret_key: string;
+}
+
+export interface AdminDashboardStats extends DashboardStats {
+  totalUsers: number;
+  activeUsers: number;
+  adminUsers: number;
+}
+
+export interface UserManagement {
+  users: User[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface Job {
   id: string;
-  company_name: string;
   job_title: string;
+  company_name: string;
+  location: string;
   job_type: string;
   salary: string;
   experience: string;
-  location: string;
   posting_date: string;
+  description?: string;
   apply_link: string;
+  tags?: string[];
+}
+export interface JobFilters {
+  locations: string[];
+  jobTypes: string[];
+  experienceLevels: string[];
+  salaryRange: {
+    min: number;
+    max: number;
+  } | null;
+  searchQuery: string;
+}
+
+export interface JobsState {
+  jobs: Job[];
+  filters: JobFilters;
+  loading: boolean;
+  hasMore: boolean;
+  currentPage: number;
 }
 
 export interface ScrapingStats {
@@ -71,8 +117,14 @@ export interface ScrapingHistoryItem {
 }
 
 export interface ApiResponse<T> {
+  is_admin: boolean | undefined;
+  id: int;
+  access_token: string;
+  refresh_token: string;
+  user: User | null | undefined;
   data: T;
   message?: string;
+  success: boolean;
 }
 
 export interface EmailConfigResponse {
@@ -105,7 +157,25 @@ export interface DashboardStats {
   }>;
 }
 
-// Types
+export enum UserProfileStatus {
+  INCOMPLETE = "incomplete",
+  IN_PROGRESS = "in_progress",
+  COMPLETED = "completed",
+}
+
+export interface UserProfile {
+  id?: number;
+  user_id: number;
+  profile_status: UserProfileStatus;
+  current_role?: string;
+  domains?: string[];
+  professional_title?: string;
+  career_stage?: string;
+  experience_level?: string;
+  resume_file_path?: string;
+  resume_uploaded_at?: string;
+}
+
 export interface ScrapingSession {
   id: number;
   startTime: string;
@@ -125,10 +195,15 @@ export interface ScrapingHistory {
   jobsOverTime: JobsOverTime[];
 }
 
-interface JobsQueryParams {
+export interface JobsQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+  location?: string[];
+  jobType?: string[];
+  experience?: string[];
+  salaryMin?: number;
+  salaryMax?: number;
 }
 
 export interface JobSourceResponse {

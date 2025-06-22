@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useJobs } from "@/hooks/use-jobs";
+import { useJobs } from "@/hooks/jobs/use-jobs";
 import { Pagination, PaginationItemType } from "@heroui/pagination";
 import { PaginationItemRenderProps } from "@heroui/pagination";
 import { ChevronLeft, ChevronRight } from "lucide-react";

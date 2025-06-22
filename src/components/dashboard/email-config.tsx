@@ -6,7 +6,7 @@ import * as z from "zod";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSettings } from "@/hooks/use-settings";
+import { useSettings } from "@/hooks/auth/use-settings";
 import { useEffect } from "react";
 
 const emailConfigSchema = z.object({

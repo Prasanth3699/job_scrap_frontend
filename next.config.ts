@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
       },
     ], // Add external image domains here
   },
+  webpack: (config) => {
+    config.optimization.minimize = true;
+    return config;
+  },
 };
 
 export default nextConfig;

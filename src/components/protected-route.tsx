@@ -1,20 +1,46 @@
+// components/protected-route.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/auth/use-auth";
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedRouteProps {
+  children: ReactNode;
+  adminRequired?: boolean;
+}
+
+export function ProtectedRoute({
+  children,
+  adminRequired = false,
+}: ProtectedRouteProps) {
+  const { isAuthenticated, isAdmin, isInitialized } = useAuth();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, router]);
+    if (!isInitialized) return;
 
-  if (!isAuthenticated) {
+    if (!isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
+
+    if (adminRequired && !isAdmin) {
+      router.replace("/landing-page");
+    }
+  }, [isAuthenticated, isAdmin, adminRequired, isInitialized, router]);
+
+  // Don't render anything until auth is initialized
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Don't render until we're sure this user should see this content
+  if (!isAuthenticated || (adminRequired && !isAdmin)) {
     return null;
   }
 
